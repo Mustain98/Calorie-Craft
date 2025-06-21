@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './SignUp.css';
-import logo from '../cc_logo-removebg-preview.png'; // Adjust path if needed
+import logo from '../logo.png'; // Adjust path if needed
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './ChangePasswordPage.css';
+import './ChangePassword.css';
 import logo from '../logo.png'; // Update path if needed
 
 export default function ChangePasswordPage() {

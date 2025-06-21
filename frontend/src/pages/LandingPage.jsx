@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
-import logo from '../cc_logo-removebg-preview.png'; // Adjust if your logo path differs
+import logo from '../logo.png'; // Adjust if your logo path differs
 
 export default function LandingPage() {
   const navigate = useNavigate();

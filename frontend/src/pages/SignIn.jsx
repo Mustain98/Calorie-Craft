@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import './SignIn.css';
-import logo from '../cc_logo-removebg-preview.png'; // Adjust path if needed
+import logo from '../logo.png';
+import { useNavigate } from 'react-router-dom';
 
 export default function SigninPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -17,9 +21,14 @@ export default function SigninPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Placeholder for backend login request
-    console.log('Login data:', formData);
-    alert('Login submitted (backend not connected)');
+
+    // Simulated check — always succeeds for now
+    if (formData.email && formData.password) {
+      console.log('Login successful (simulated):', formData);
+      navigate('/profile'); // ✅ simulate going to the profile page
+    } else {
+      setError('Please enter email and password.');
+    }
   };
 
   return (
@@ -37,6 +46,7 @@ export default function SigninPage() {
           <input type="email" name="email" placeholder="Enter your email" value={formData.email} onChange={handleChange} required />
           <input type="password" name="password" placeholder="Enter your password" value={formData.password} onChange={handleChange} required />
 
+          {error && <p className="error-text">{error}</p>}
           <button type="submit">Sign in</button>
         </form>
       </div>
