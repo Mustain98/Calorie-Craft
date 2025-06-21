@@ -1,0 +1,100 @@
+.signup-page {
+  display: flex;
+  height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Left green section */
+.signup-left {
+  width: 40%;
+  background-color: #99d209;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.signup-logo {
+  width: 100px;
+  height: 100px;
+  margin-bottom: 20px;
+}
+
+.signup-title {
+  font-size: 36px;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Right white form section */
+.signup-right {
+  width: 60%;
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.signup-form {
+  width: 100%;
+  max-width: 400px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Heading */
+.signup-form h2 {
+  margin-bottom: 20px;
+  font-size: 22px;
+  color: #333;
+}
+
+/* Input and select fields */
+.signup-form input,
+.signup-form select {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  font-family: 'Segoe UI', sans-serif;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  background-color: white;
+  color: #333;
+  box-sizing: border-box;
+}
+
+/* Optional: Hover and focus effects */
+.signup-form input:focus,
+.signup-form select:focus {
+  border-color: #99d209;
+  outline: none;
+  box-shadow: 0 0 4px rgba(153, 210, 9, 0.4);
+}
+
+/* Submit button */
+.signup-form button {
+  padding: 12px;
+  background-color: #99d209;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.signup-form button:hover {
+  background-color: #85b800;
+}
+
+/* Error message */
+.error-text {
+  color: red;
+  font-size: 14px;
+  margin-top: -8px;
+  margin-bottom: 10px;
+}
