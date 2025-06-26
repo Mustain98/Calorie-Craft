@@ -12,6 +12,8 @@ const PORT = process.env.PORT;
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 // Route
 app.use('/api/fooditem', foodItemRoute);
