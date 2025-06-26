@@ -38,8 +38,8 @@
 
 .signup-form {
   width: 100%;
-  max-width: 400px;
-  padding: 30px;
+  max-width: 380px;
+  padding: 20px 25px;
   display: flex;
   flex-direction: column;
 }
@@ -51,38 +51,57 @@
   color: #333;
 }
 
+/* Labels */
+.signup-form label {
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: #333;
+}
+
 /* Input and select fields */
 .signup-form input,
 .signup-form select {
   width: 100%;
-  padding: 12px;
-  font-size: 16px;
+  padding: 8px 10px;
+  font-size: 14px;
   font-family: 'Segoe UI', sans-serif;
   border: 1px solid #ccc;
-  border-radius: 6px;
-  margin-bottom: 16px;
+  border-radius: 5px;
+  margin-bottom: 14px;
   background-color: white;
   color: #333;
   box-sizing: border-box;
 }
 
-/* Optional: Hover and focus effects */
+/* Remove number input steppers */
+.signup-form input[type="number"]::-webkit-outer-spin-button,
+.signup-form input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.signup-form input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+/* Focus effects */
 .signup-form input:focus,
 .signup-form select:focus {
   border-color: #99d209;
   outline: none;
-  box-shadow: 0 0 4px rgba(153, 210, 9, 0.4);
+  box-shadow: 0 0 4px rgba(153, 210, 9, 0.3);
 }
 
 /* Submit button */
 .signup-form button {
-  padding: 12px;
+  padding: 10px;
   background-color: #99d209;
   color: white;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 15px;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -94,7 +113,7 @@
 /* Error message */
 .error-text {
   color: red;
-  font-size: 14px;
-  margin-top: -8px;
+  font-size: 13px;
+  margin-top: -6px;
   margin-bottom: 10px;
 }

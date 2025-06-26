@@ -1,4 +1,3 @@
-/* Base Layout */
 .profile-page {
   display: flex;
   font-family: 'Segoe UI', sans-serif;
@@ -6,30 +5,42 @@
   min-height: 100vh;
 }
 
-/* Toggle Button */
 .toggle-btn {
   position: fixed;
   top: 20px;
   left: 20px;
   z-index: 1000;
+  width: 45px;
+  height: 45px;
   background-color: #99d209;
-  color: white;
   border: none;
-  border-radius: 4px;
-  width: 40px;
-  height: 40px;
-  font-size: 24px;
-  cursor: pointer;
+  border-radius: 50%; /* Makes it round */
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease;
 }
 
 .toggle-btn:hover {
   background-color: #85b800;
 }
+
+/* Container for vertical bars */
+.toggle-btn .bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toggle-btn .bar {
+  width: 4px;
+  height: 18px;
+  background-color: white;
+  border-radius: 2px;
+}
+
 
 /* Sidebar */
 .sidebar {
@@ -47,7 +58,6 @@
   transition: transform 0.3s ease;
 }
 
-/* Hide sidebar when not visible */
 .sidebar.hidden {
   transform: translateX(-100%);
 }
@@ -79,14 +89,13 @@
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  /* Remove justify-content: space-between to bring items closer */
 }
-/* Updated Menu with reduced gap */
+
 .sidebar-menu {
   display: flex;
   flex-direction: column;
-  gap: 4px; /* Reduced from 8px */
-  margin-bottom: 10px; /* Reduced from 20px */
+  gap: 4px;
+  margin-bottom: 10px;
 }
 
 .sidebar-menu button {
@@ -106,13 +115,12 @@
   border-left: 5px solid #99d209;
 }
 
-/* Updated Logout Container */
+/* Original CSS remains exactly the same except this change */
 .logout-container {
-  margin-top: 0; /* Changed from auto */
-  padding-top: 10px;
+  margin-top: 5px;  /* Reduced from larger value */
+  padding-top: 5px; /* Reduced padding */
   border-top: 1px solid #e0e0e0;
 }
-
 .logout-btn {
   width: 100%;
   padding: 10px;
@@ -131,32 +139,57 @@
 }
 
 /* Main Content */
-.profile-form-container {
+.profile-main {
   margin-left: 250px;
-  padding: 40px;
   flex: 1;
-  background-color: white;
   min-height: 100vh;
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   transition: margin-left 0.3s ease;
 }
 
-/* When sidebar is hidden */
-.profile-form-container.sidebar-hidden {
+.profile-main.sidebar-hidden {
   margin-left: 0;
 }
 
+.profile-form-container {
+  width: 100%;
+  max-width: 600px;
+  padding: 24px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
 .profile-form {
-  max-width: 500px;
-  margin: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
+}
+
+.profile-form label {
+  font-size: 14px;
+  margin-bottom: -8px;
+  color: #444;
+  font-weight: 500;
+}
+
+.profile-form input {
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: white;
+  color: #333;
 }
 
 .form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 16px;
 }
 
 .update-btn,
@@ -164,8 +197,8 @@
   background-color: #99d209;
   color: white;
   border: none;
-  padding: 12px;
-  font-size: 16px;
+  padding: 10px 14px;
+  font-size: 15px;
   border-radius: 6px;
   cursor: pointer;
 }
@@ -173,11 +206,4 @@
 .update-btn:hover,
 .change-password-btn:hover {
   background-color: #85b800;
-}
-
-.profile-form input {
-  padding: 12px;
-  font-size: 16px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
 }

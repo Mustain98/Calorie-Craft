@@ -6,6 +6,8 @@ import logo from '../logo.png';
 export default function ShowAllMeal() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'my'
 
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
@@ -14,6 +16,13 @@ export default function ShowAllMeal() {
   const handleLogout = () => {
     navigate('/login');
   };
+
+  // Sample meal data
+  const allMeals = [
+    { id: 1, name: 'Grilled Chicken Salad', calories: 300, protein: 25 },
+    { id: 2, name: 'Oatmeal with Fruits', calories: 250, fiber: 8 },
+    { id: 3, name: 'Boiled Egg & Toast', calories: 200, protein: 12 },
+  ];
 
   return (
     <div className="show-meal-page">
@@ -45,7 +54,6 @@ export default function ShowAllMeal() {
               <button onClick={() => navigate('/profile')}>Profile</button>
               <button className="active">Show All Meal</button>
               <button onClick={() => navigate('/mealplan')}>Meal Plan</button>
-              <button onClick={() => navigate('/customizeplan')}>Customize Plan</button>
               <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
               <button onClick={() => navigate('/goal')}>Goal Setting</button>
             </nav>
@@ -59,47 +67,55 @@ export default function ShowAllMeal() {
       )}
 
       {/* Main Content */}
-      <main
-        className={`show-meal-content ${sidebarVisible ? '' : 'sidebar-hidden'}`}
-      >
+      <main className={`show-meal-content ${sidebarVisible ? '' : 'sidebar-hidden'}`}>
+        {/* Background Card - Visible in both views */}
+        <div className="background-card"></div>
 
-              {/* Top Controls */}
-      <div className="top-controls">
-        <div className="meal-toggle">
-          <button className="inactive">My Food</button>
-          <button className="active">All Meals</button>
+        {/* Content Container */}
+        <div className="content-container">
+          {/* Top Controls */}
+          <div className="top-controls">
+            <div className="meal-toggle">
+              <button 
+                className={activeTab === 'my' ? 'active' : 'inactive'}
+                onClick={() => setActiveTab('my')}
+              >
+                My Food
+              </button>
+              <button 
+                className={activeTab === 'all' ? 'active' : 'inactive'}
+                onClick={() => setActiveTab('all')}
+              >
+                All Meals
+              </button>
+            </div>
+
+            <div className="search-bar">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Search Foods..."
+                className="search-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Meal List - Only shown in All Meals view */}
+          {activeTab === 'all' && (
+            <div className="meal-list">
+              {allMeals.map(meal => (
+                <div key={meal.id} className="meal-card">
+                  <h3>{meal.name}</h3>
+                  <p>Calories: {meal.calories} kcal</p>
+                  {meal.protein && <p>Protein: {meal.protein}g</p>}
+                  {meal.fiber && <p>Fiber: {meal.fiber}g</p>}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-
-        <div className="search-bar">
-          <span className="search-icon">🔍</span>
-          <input
-            type="text"
-            placeholder="Search Foods..."
-            className="search-input"
-            disabled // We'll enable it later when search logic is added
-          />
-        </div>
-      </div>
-
-<div className="meal-list">
-  <div className="meal-card">
-    <h3>Grilled Chicken Salad</h3>
-    <p>Calories: 300 kcal</p>
-    <p>Protein: 25g</p>
-  </div>
-  <div className="meal-card">
-    <h3>Oatmeal with Fruits</h3>
-    <p>Calories: 250 kcal</p>
-    <p>Fiber: 8g</p>
-  </div>
-  <div className="meal-card">
-    <h3>Boiled Egg & Toast</h3>
-    <p>Calories: 200 kcal</p>
-    <p>Protein: 12g</p>
-  </div>
-</div>
-
-
       </main>
     </div>
   );

@@ -49,7 +49,6 @@ export default function ProfilePage() {
               <button className="active" onClick={() => navigate('/profile')}>Profile</button>
               <button onClick={() => navigate('/showmeal')}>Show All Meal</button>
               <button onClick={() => navigate('/mealplan')}>Meal Plan</button>
-              <button onClick={() => navigate('/customizeplan')}>Customize Plan</button>
               <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
               <button onClick={() => navigate('/goal')}>Goal Setting</button>
             </nav>
@@ -64,33 +63,41 @@ export default function ProfilePage() {
       )}
 
       {/* Main content */}
-      <main
-        className="profile-form-container"
-        style={{ marginLeft: sidebarVisible ? '250px' : '0' }}
-      >
-        <form className="profile-form">
-          <div className="form-header">
-            <h2>Your Profile</h2>
-            <button type="button" className="update-btn">
-              Update Profile
+      <main className={`profile-main ${sidebarVisible ? '' : 'sidebar-hidden'}`}>
+        <div className="profile-form-container">
+          <form className="profile-form">
+            <div className="form-header">
+              <h2>Your Profile</h2>
+              <button type="button" className="update-btn">Update Profile</button>
+            </div>
+
+            <label>Email address</label>
+            <input type="email" value="email@gmail.com" readOnly />
+
+            <label>Sex</label>
+            <input type="text" value="Male" readOnly />
+
+            <label>Age</label>
+            <input type="number" value="50" readOnly />
+
+            <label>Weight (kg)</label>
+            <input type="number" value="70" readOnly />
+
+            <label>Body Fat (%)</label>
+            <input type="number" value="20" readOnly />
+
+            <label>Activity Level</label>
+            <input type="text" value="Moderate" readOnly />
+
+            <button
+              type="button"
+              className="change-password-btn"
+              onClick={handleChangePassword}
+            >
+              Change Password
             </button>
-          </div>
-
-          <input type="email" placeholder="Email address" value="email@gmail.com" readOnly />
-          <input type="text" placeholder="Sex" value="Male" readOnly />
-          <input type="number" placeholder="Age" value="50" readOnly />
-          <input type="number" placeholder="Weight" value="70" readOnly />
-          <input type="number" placeholder="BodyFat" value="20" readOnly />
-          <input type="text" placeholder="ActivityLevel" value="Moderate" readOnly />
-
-          <button
-            type="button"
-            className="change-password-btn"
-            onClick={handleChangePassword}
-          >
-            Change Password
-          </button>
-        </form>
+          </form>
+        </div>
       </main>
     </div>
   );
