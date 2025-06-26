@@ -1,0 +1,183 @@
+/* Base Layout */
+.profile-page {
+  display: flex;
+  font-family: 'Segoe UI', sans-serif;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Toggle Button */
+.toggle-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  background-color: #99d209;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 40px;
+  height: 40px;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+  background-color: #85b800;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 250px;
+  background-color: #f5f5f5;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  z-index: 100;
+  transition: transform 0.3s ease;
+}
+
+/* Hide sidebar when not visible */
+.sidebar.hidden {
+  transform: translateX(-100%);
+}
+
+.sidebar-header {
+  text-align: center;
+  margin-bottom: 15px;
+  color: #99d209;
+}
+
+.sidebar-logo {
+  width: 50px;
+  height: 50px;
+}
+
+.sidebar-user {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.user-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.sidebar-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  /* Remove justify-content: space-between to bring items closer */
+}
+/* Updated Menu with reduced gap */
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Reduced from 8px */
+  margin-bottom: 10px; /* Reduced from 20px */
+}
+
+.sidebar-menu button {
+  padding: 10px;
+  border: none;
+  background-color: white;
+  border-left: 5px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 15px;
+}
+
+.sidebar-menu button:hover,
+.sidebar-menu .active {
+  background-color: #e0f3c2;
+  border-left: 5px solid #99d209;
+}
+
+/* Updated Logout Container */
+.logout-container {
+  margin-top: 0; /* Changed from auto */
+  padding-top: 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.logout-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background-color: white;
+  border-left: 5px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 15px;
+}
+
+.logout-btn:hover {
+  background-color: #e0f3c2;
+  border-left: 5px solid #99d209;
+}
+
+/* Main Content */
+.profile-form-container {
+  margin-left: 250px;
+  padding: 40px;
+  flex: 1;
+  background-color: white;
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+/* When sidebar is hidden */
+.profile-form-container.sidebar-hidden {
+  margin-left: 0;
+}
+
+.profile-form {
+  max-width: 500px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.update-btn,
+.change-password-btn {
+  background-color: #99d209;
+  color: white;
+  border: none;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.update-btn:hover,
+.change-password-btn:hover {
+  background-color: #85b800;
+}
+
+.profile-form input {
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}

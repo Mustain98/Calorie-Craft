@@ -1,0 +1,50 @@
+/* Green full screen layout */
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #99d209;
+}
+
+/* Logo size and margin */
+.landing-logo {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  margin-bottom: 30px;
+}
+
+/* Title below logo */
+.landing-title {
+  font-size: 40px;
+  color: white;
+  font-weight: bold;
+  margin-bottom: 100px;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Horizontal button group */
+.landing-buttons {
+  display: flex;
+  gap: 60px; /* spacing between buttons */
+}
+
+/* White buttons with styling */
+.landing-button {
+  background-color: white;
+  color: #228B22;
+  font-weight: bold;
+  font-size: 18px;
+  padding: 14px 30px;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.landing-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+}
