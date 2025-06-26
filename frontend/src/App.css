@@ -1,0 +1,13 @@
+/* Base reset */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  box-sizing: border-box;
+}
+
+/* Optional: global button reset */
+button {
+  font-family: inherit;
+  cursor: pointer;
+}

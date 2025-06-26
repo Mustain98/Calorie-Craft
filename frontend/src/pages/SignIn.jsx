@@ -1,0 +1,55 @@
+import React, { useState } from 'react';
+import './SignIn.css';
+import logo from '../logo.png';
+import { useNavigate } from 'react-router-dom';
+
+export default function SigninPage() {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // Simulated check — always succeeds for now
+    if (formData.email && formData.password) {
+      console.log('Login successful (simulated):', formData);
+      navigate('/profile'); // ✅ simulate going to the profile page
+    } else {
+      setError('Please enter email and password.');
+    }
+  };
+
+  return (
+    <div className="signin-page">
+      <div className="signin-left">
+        <img src={logo} alt="Calorie Craft Logo" className="signin-logo" />
+        <h1 className="signin-title">Calorie Craft</h1>
+      </div>
+
+      <div className="signin-right">
+        <form className="signin-form" onSubmit={handleSubmit}>
+          <h2><span className="green-text">Welcome</span> Back!</h2>
+          <p className="subtitle">Sign in to get started</p>
+
+          <input type="email" name="email" placeholder="Enter your email" value={formData.email} onChange={handleChange} required />
+          <input type="password" name="password" placeholder="Enter your password" value={formData.password} onChange={handleChange} required />
+
+          {error && <p className="error-text">{error}</p>}
+          <button type="submit">Sign in</button>
+        </form>
+      </div>
+    </div>
+  );
+}
