@@ -1,14 +1,14 @@
 const mongoose = require('mongoose');
 
-const TimedMealSchema = new mongoose.Schema({
-  name: {
-    type: String, // e.g., 'breakfast', 'lunch', 'snack1'
+const DayPlanSchema = new mongoose.Schema({
+  date: {
+    type: Date,
     required: true,
   },
-  meals: [
+  timedMeals: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'meal',
+      ref: 'timedMeal'
     }
   ],
   totalCalories: {
@@ -29,4 +29,4 @@ const TimedMealSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('TimedMeal', TimedMealSchema);
+module.exports = mongoose.model('dayPlan', DayPlanSchema);
