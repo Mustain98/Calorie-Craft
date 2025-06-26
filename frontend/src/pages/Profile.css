@@ -3,6 +3,13 @@
   height: 100vh;
   font-family: 'Segoe UI', sans-serif;
 }
+.sidebar-header h2 {
+  color: #99d209;
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
 
 /* Sidebar */
 .sidebar {
