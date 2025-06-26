@@ -1,5 +1,4 @@
-/* Base Layout */
-.profile-page {
+show-meal-page {
   display: flex;
   font-family: 'Segoe UI', sans-serif;
   position: relative;
@@ -39,7 +38,7 @@
   height: 100vh;
   width: 250px;
   background-color: #f5f5f5;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   padding: 20px;
@@ -47,7 +46,6 @@
   transition: transform 0.3s ease;
 }
 
-/* Hide sidebar when not visible */
 .sidebar.hidden {
   transform: translateX(-100%);
 }
@@ -79,14 +77,13 @@
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  /* Remove justify-content: space-between to bring items closer */
 }
-/* Updated Menu with reduced gap */
+
 .sidebar-menu {
   display: flex;
   flex-direction: column;
-  gap: 4px; /* Reduced from 8px */
-  margin-bottom: 10px; /* Reduced from 20px */
+  gap: 4px;
+  margin-bottom: 10px;
 }
 
 .sidebar-menu button {
@@ -106,9 +103,8 @@
   border-left: 5px solid #99d209;
 }
 
-/* Updated Logout Container */
 .logout-container {
-  margin-top: 0; /* Changed from auto */
+  margin-top: 0;
   padding-top: 10px;
   border-top: 1px solid #e0e0e0;
 }
@@ -131,7 +127,7 @@
 }
 
 /* Main Content */
-.profile-form-container {
+.show-meal-content {
   margin-left: 250px;
   padding: 40px;
   flex: 1;
@@ -140,44 +136,81 @@
   transition: margin-left 0.3s ease;
 }
 
-/* When sidebar is hidden */
-.profile-form-container.sidebar-hidden {
+.show-meal-content.sidebar-hidden {
   margin-left: 0;
 }
-
-.profile-form {
-  max-width: 500px;
-  margin: auto;
+.meal-list {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 20px;
 }
 
-.form-header {
+.meal-card {
+  width: 250px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  background-color: #f9fff2;
+}
+/* Top Control Section */
+.top-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
 }
 
-.update-btn,
-.change-password-btn {
+/* Toggle Buttons */
+.meal-toggle {
+  display: flex;
+  border: 1px solid #ccc;
+  border-radius: 30px;
+  overflow: hidden;
+  height: 36px;
+}
+
+.meal-toggle button {
+  background-color: white;
+  border: none;
+  padding: 6px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
+  color: #666;
+}
+
+.meal-toggle .active {
   background-color: #99d209;
   color: white;
-  border: none;
-  padding: 12px;
-  font-size: 16px;
-  border-radius: 6px;
-  cursor: pointer;
+  font-weight: 600;
 }
 
-.update-btn:hover,
-.change-password-btn:hover {
-  background-color: #85b800;
+.meal-toggle .inactive:hover {
+  background-color: #f0f0f0;
 }
 
-.profile-form input {
-  padding: 12px;
-  font-size: 16px;
-  border-radius: 6px;
+/* Search Bar */
+.search-bar {
+  display: flex;
+  align-items: center;
   border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 6px 10px;
+  background-color: white;
+}
+
+.search-icon {
+  font-size: 16px;
+  margin-right: 8px;
+  color: #666;
+}
+
+.search-input {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  width: 200px;
 }

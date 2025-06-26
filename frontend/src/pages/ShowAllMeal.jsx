@@ -1,26 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Profile.css';
+import './ShowAllMeal.css';
 import logo from '../logo.png';
 
-export default function ProfilePage() {
+export default function ShowAllMeal() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
-
-  const handleLogout = () => {
-    navigate('/login');
-  };
-
-  const handleChangePassword = () => {
-    navigate('/changepassword');
-  };
 
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
   };
 
+  const handleLogout = () => {
+    navigate('/login');
+  };
+
   return (
-    <div className="profile-page">
+    <div className="show-meal-page">
       {/* Toggle Button */}
       <button className="toggle-btn" onClick={toggleSidebar}>
         &#8942;
@@ -40,20 +36,19 @@ export default function ProfilePage() {
               alt="User"
               className="user-avatar"
             />
-            <h4>Hello! Siu</h4>
-            <p>siu@gmail.com</p>
+            <h4>Hello! Michael</h4>
+            <p>michaelcraft67@gmail.com</p>
           </div>
 
           <div className="sidebar-content">
             <nav className="sidebar-menu">
-              <button className="active" onClick={() => navigate('/profile')}>Profile</button>
-              <button onClick={() => navigate('/showmeal')}>Show All Meal</button>
+              <button onClick={() => navigate('/profile')}>Profile</button>
+              <button className="active">Show All Meal</button>
               <button onClick={() => navigate('/mealplan')}>Meal Plan</button>
               <button onClick={() => navigate('/customizeplan')}>Customize Plan</button>
               <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
               <button onClick={() => navigate('/goal')}>Goal Setting</button>
             </nav>
-
             <div className="logout-container">
               <button className="logout-btn" onClick={handleLogout}>
                 Log out
@@ -63,34 +58,48 @@ export default function ProfilePage() {
         </aside>
       )}
 
-      {/* Main content */}
+      {/* Main Content */}
       <main
-        className="profile-form-container"
-        style={{ marginLeft: sidebarVisible ? '250px' : '0' }}
+        className={`show-meal-content ${sidebarVisible ? '' : 'sidebar-hidden'}`}
       >
-        <form className="profile-form">
-          <div className="form-header">
-            <h2>Your Profile</h2>
-            <button type="button" className="update-btn">
-              Update Profile
-            </button>
-          </div>
 
-          <input type="email" placeholder="Email address" value="email@gmail.com" readOnly />
-          <input type="text" placeholder="Sex" value="Male" readOnly />
-          <input type="number" placeholder="Age" value="50" readOnly />
-          <input type="number" placeholder="Weight" value="70" readOnly />
-          <input type="number" placeholder="BodyFat" value="20" readOnly />
-          <input type="text" placeholder="ActivityLevel" value="Moderate" readOnly />
+              {/* Top Controls */}
+      <div className="top-controls">
+        <div className="meal-toggle">
+          <button className="inactive">My Food</button>
+          <button className="active">All Meals</button>
+        </div>
 
-          <button
-            type="button"
-            className="change-password-btn"
-            onClick={handleChangePassword}
-          >
-            Change Password
-          </button>
-        </form>
+        <div className="search-bar">
+          <span className="search-icon">🔍</span>
+          <input
+            type="text"
+            placeholder="Search Foods..."
+            className="search-input"
+            disabled // We'll enable it later when search logic is added
+          />
+        </div>
+      </div>
+
+<div className="meal-list">
+  <div className="meal-card">
+    <h3>Grilled Chicken Salad</h3>
+    <p>Calories: 300 kcal</p>
+    <p>Protein: 25g</p>
+  </div>
+  <div className="meal-card">
+    <h3>Oatmeal with Fruits</h3>
+    <p>Calories: 250 kcal</p>
+    <p>Fiber: 8g</p>
+  </div>
+  <div className="meal-card">
+    <h3>Boiled Egg & Toast</h3>
+    <p>Calories: 200 kcal</p>
+    <p>Protein: 12g</p>
+  </div>
+</div>
+
+
       </main>
     </div>
   );
