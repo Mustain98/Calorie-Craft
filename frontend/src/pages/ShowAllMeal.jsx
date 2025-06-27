@@ -6,8 +6,8 @@ import logo from '../logo.png';
 export default function ShowAllMeal() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'my'
+  const [selectedMeal, setSelectedMeal] = useState(null);
 
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
@@ -17,19 +17,48 @@ export default function ShowAllMeal() {
     navigate('/login');
   };
 
-  // Sample meal data
   const allMeals = [
-    { id: 1, name: 'Grilled Chicken Salad', calories: 300, protein: 25 },
-    { id: 2, name: 'Oatmeal with Fruits', calories: 250, fiber: 8 },
-    { id: 3, name: 'Boiled Egg & Toast', calories: 200, protein: 12 },
+    {
+      id: 1,
+      name: 'Grilled Chicken Salad',
+      image: 'https://source.unsplash.com/300x200/?grilled-chicken',
+      calories: 248,
+      fat: 6,
+      carbs: 48,
+      fiber: 12,
+      sugar: 14,
+      protein: 7,
+      cholesterol: 10,
+      vitaminA: '9357 IU',
+      vitaminC: '13 mg',
+      ingredients: ['Chicken Breast', 'Lettuce', 'Olive Oil'],
+    },
+    {
+      id: 2,
+      name: 'Oatmeal with Fruits',
+      image: 'https://source.unsplash.com/300x200/?oatmeal',
+      calories: 210,
+      fat: 4,
+      carbs: 35,
+      fiber: 10,
+      sugar: 9,
+      protein: 5,
+      cholesterol: 0,
+      vitaminA: '5100 IU',
+      vitaminC: '10 mg',
+      ingredients: ['Oats', 'Banana', 'Berries'],
+    },
   ];
+
+  const filteredMeals = activeTab === 'my' ? [] : allMeals;
 
   return (
     <div className="show-meal-page">
-      {/* Toggle Button */}
-      <button className="toggle-btn" onClick={toggleSidebar}>
-        &#8942;
-      </button>
+      {/* Toggle Sidebar Button */}
+     <button className="toggle-btn" onClick={toggleSidebar}>
+  &#8942;
+</button>
+
 
       {/* Sidebar */}
       {sidebarVisible && (
@@ -58,65 +87,87 @@ export default function ShowAllMeal() {
               <button onClick={() => navigate('/goal')}>Goal Setting</button>
             </nav>
             <div className="logout-container">
-              <button className="logout-btn" onClick={handleLogout}>
-                Log out
-              </button>
+              <button className="logout-btn" onClick={handleLogout}>Log out</button>
             </div>
           </div>
         </aside>
       )}
 
-      {/* Main Content */}
-      <main className={`show-meal-content ${sidebarVisible ? '' : 'sidebar-hidden'}`}>
-        {/* Background Card - Visible in both views */}
-        <div className="background-card"></div>
-
-        {/* Content Container */}
-        <div className="content-container">
-          {/* Top Controls */}
-          <div className="top-controls">
-            <div className="meal-toggle">
-              <button 
-                className={activeTab === 'my' ? 'active' : 'inactive'}
-                onClick={() => setActiveTab('my')}
-              >
-                My Food
-              </button>
-              <button 
-                className={activeTab === 'all' ? 'active' : 'inactive'}
-                onClick={() => setActiveTab('all')}
-              >
-                All Meals
-              </button>
-            </div>
-
-            <div className="search-bar">
-              <span className="search-icon">🔍</span>
-              <input
-                type="text"
-                placeholder="Search Foods..."
-                className="search-input"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+      {/* Main content */}
+      <main className="show-meal-content">
+        <div className="top-controls">
+          <div className="meal-toggle">
+            <button
+              className={activeTab === 'my' ? 'active' : 'inactive'}
+              onClick={() => setActiveTab('my')}
+            >
+              My Food
+            </button>
+            <button
+              className={activeTab === 'all' ? 'active' : 'inactive'}
+              onClick={() => setActiveTab('all')}
+            >
+              All Meals
+            </button>
           </div>
+        </div>
 
-          {/* Meal List - Only shown in All Meals view */}
-          {activeTab === 'all' && (
-            <div className="meal-list">
-              {allMeals.map(meal => (
-                <div key={meal.id} className="meal-card">
-                  <h3>{meal.name}</h3>
-                  <p>Calories: {meal.calories} kcal</p>
-                  {meal.protein && <p>Protein: {meal.protein}g</p>}
-                  {meal.fiber && <p>Fiber: {meal.fiber}g</p>}
-                </div>
-              ))}
+        <div className="meal-list">
+          {filteredMeals.map((meal) => (
+            <div
+              key={meal.id}
+              className="meal-card"
+              onClick={() => setSelectedMeal(meal)}
+            >
+              <img src={meal.image} alt={meal.name} />
+              <h3>{meal.name}</h3>
+              <p>Calories: {meal.calories}</p>
             </div>
-          )}
+          ))}
         </div>
       </main>
+
+      {/* Modal */}
+      {selectedMeal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <button className="close-btn" onClick={() => setSelectedMeal(null)}>
+              &times;
+            </button>
+
+            <img src={selectedMeal.image} alt={selectedMeal.name} />
+            <h2>{selectedMeal.name}</h2>
+
+            <div className="modal-content">
+              <div className="left">
+                <h4>Ingredients</h4>
+                <ul>
+                  {selectedMeal.ingredients.map((ing, i) => (
+                    <li key={i}>{ing}</li>
+                  ))}
+                </ul>
+                <button className="add-btn">add More</button>
+              </div>
+              <div className="right">
+                <h4>Nutritions</h4>
+                <ul>
+                  <li>Calories: {selectedMeal.calories}</li>
+                  <li>Fat: {selectedMeal.fat}g</li>
+                  <li>Carbs: {selectedMeal.carbs}g</li>
+                  <li>Fiber: {selectedMeal.fiber}g</li>
+                  <li>Sugar: {selectedMeal.sugar}g</li>
+                  <li>Protein: {selectedMeal.protein}g</li>
+                  <li>Cholesterol: {selectedMeal.cholesterol}mg</li>
+                  <li>Vitamin A: {selectedMeal.vitaminA}</li>
+                  <li>Vitamin C: {selectedMeal.vitaminC}</li>
+                </ul>
+              </div>
+            </div>
+
+            <button className="save-btn">Save Changes</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
