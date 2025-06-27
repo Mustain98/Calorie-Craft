@@ -1,14 +1,47 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 import logo from '../logo.png';
+import axios from 'axios';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [userData, setUserData] = useState(null);
+
+  // Check token and load user info on mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      navigate('/signin');
+      return;
+    }
+
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get('http://localhost:4000/api/users/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setUserData(res.data);
+      } catch (err) {
+        // Token invalid or expired
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/signin');
+      }
+    };
+
+    fetchUser();
+  }, [navigate]);
 
   const handleLogout = () => {
-    navigate('/login');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/signin');
   };
 
   const handleChangePassword = () => {
@@ -18,6 +51,10 @@ export default function ProfilePage() {
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
   };
+
+  if (!userData) {
+    return <p>Loading profile...</p>;
+  }
 
   return (
     <div className="profile-page">
@@ -40,8 +77,8 @@ export default function ProfilePage() {
               alt="User"
               className="user-avatar"
             />
-            <h4>Hello! Siu</h4>
-            <p>siu@gmail.com</p>
+            <h4>Hello! {userData.name}</h4>
+            <p>{userData.email}</p>
           </div>
 
           <div className="sidebar-content">
@@ -72,22 +109,22 @@ export default function ProfilePage() {
             </div>
 
             <label>Email address</label>
-            <input type="email" value="email@gmail.com" readOnly />
+            <input type="email" value={userData.email} readOnly />
 
             <label>Sex</label>
-            <input type="text" value="Male" readOnly />
+            <input type="text" value={userData.gender || ''} readOnly />
 
             <label>Age</label>
-            <input type="number" value="50" readOnly />
+            <input type="number" value={userData.age || ''} readOnly />
 
             <label>Weight (kg)</label>
-            <input type="number" value="70" readOnly />
+            <input type="number" value={userData.weight || ''} readOnly />
 
             <label>Body Fat (%)</label>
-            <input type="number" value="20" readOnly />
+            <input type="number" value={userData.bodyFat || ''} readOnly />
 
             <label>Activity Level</label>
-            <input type="text" value="Moderate" readOnly />
+            <input type="text" value={userData.activityLevel || ''} readOnly />
 
             <button
               type="button"

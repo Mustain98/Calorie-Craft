@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './SignIn.css';
 import logo from '../logo.png';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function SigninPage() {
   const [formData, setFormData] = useState({
@@ -19,15 +20,25 @@ export default function SigninPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Simulated check — always succeeds for now
-    if (formData.email && formData.password) {
-      console.log('Login successful (simulated):', formData);
-      navigate('/profile'); // ✅ simulate going to the profile page
-    } else {
+    if (!formData.email || !formData.password) {
       setError('Please enter email and password.');
+      return;
+    }
+
+    try {
+      const res = await axios.post('http://localhost:4000/api/users/login', formData);
+
+      // Store token & user data in localStorage
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data));
+
+      setError('');
+      navigate('/profile');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Login failed. Please try again.');
     }
   };
 
@@ -43,8 +54,22 @@ export default function SigninPage() {
           <h2><span className="green-text">Welcome</span> Back!</h2>
           <p className="subtitle">Sign in to get started</p>
 
-          <input type="email" name="email" placeholder="Enter your email" value={formData.email} onChange={handleChange} required />
-          <input type="password" name="password" placeholder="Enter your password" value={formData.password} onChange={handleChange} required />
+          <input
+            type="email"
+            name="email"
+            placeholder="Enter your email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Enter your password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
 
           {error && <p className="error-text">{error}</p>}
           <button type="submit">Sign in</button>
