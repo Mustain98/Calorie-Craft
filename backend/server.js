@@ -6,6 +6,7 @@ const mealRoute=require('./routes/meal');
 const timedMealRoute=require('./routes/timedMeal');
 const dayPlanRoute=require('./routes/dayPlan');
 const weekPlanRoute=require('./routes/weekPlan');
+const userRoute=require('./routes/user');
 
 const app = express();
 const PORT = process.env.PORT;
@@ -21,6 +22,7 @@ app.use('/api/meal',mealRoute);
 app.use('/api/timedMeal',timedMealRoute);
 app.use('/api/dayPlan',dayPlanRoute);
 app.use('/api/weekPlan',weekPlanRoute);
+app.use('/api/users',userRoute);
 
 // Connect to MongoDB and then start server
 mongoose.connect(process.env.MONGO_URI)
