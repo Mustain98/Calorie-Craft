@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
 import './SignUp.css';
-import logo from '../logo.png'; // Update path if necessary
+import logo from '../logo.png';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
-    username: '',
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    sex: '',
+    gender: '',
     age: '',
     weight: '',
+    height: '',
     activityLevel: '',
   });
 
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -23,7 +28,7 @@ export default function SignupPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
@@ -32,8 +37,30 @@ export default function SignupPage() {
     }
 
     setError('');
-    console.log('Signup form data:', formData);
-    alert('Sign-up submitted (backend not connected)');
+    setSuccess('');
+
+    try {
+      const response = await axios.post('http://localhost:4000/api/users/register', {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        age: Number(formData.age),
+        gender: formData.gender,
+        weight: Number(formData.weight),
+        height: Number(formData.height),
+        activityLevel: formData.activityLevel
+      });
+
+      localStorage.setItem('token', response.data.token);
+
+      setSuccess('User registered successfully! Redirecting to login...');
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
+
+    } catch (err) {
+      setError(err.response?.data?.error || 'Registration failed.');
+    }
   };
 
   return (
@@ -50,9 +77,9 @@ export default function SignupPage() {
           <label>Username</label>
           <input
             type="text"
-            name="username"
-            placeholder="Enter your username"
-            value={formData.username}
+            name="name"
+            placeholder="Enter your name"
+            value={formData.name}
             onChange={handleChange}
             required
           />
@@ -89,8 +116,8 @@ export default function SignupPage() {
 
           <label>Gender</label>
           <select
-            name="sex"
-            value={formData.sex}
+            name="gender"
+            value={formData.gender}
             onChange={handleChange}
             required
           >
@@ -119,6 +146,16 @@ export default function SignupPage() {
             required
           />
 
+          <label>Height (cm)</label>
+          <input
+            type="number"
+            name="height"
+            placeholder="Enter your height"
+            value={formData.height}
+            onChange={handleChange}
+            required
+          />
+
           <label>Activity Level</label>
           <select
             name="activityLevel"
@@ -135,6 +172,7 @@ export default function SignupPage() {
           </select>
 
           {error && <p className="error-text">{error}</p>}
+          {success && <p className="success-text">{success}</p>}
 
           <button type="submit">Sign up</button>
         </form>

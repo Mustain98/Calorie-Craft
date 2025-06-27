@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
+const cors=require('cors');
 const mongoose = require('mongoose');
+//routes
 const foodItemRoute = require('./routes/fooditem');
 const mealRoute=require('./routes/meal');
 const timedMealRoute=require('./routes/timedMeal');
@@ -13,6 +15,7 @@ const PORT = process.env.PORT;
 
 // Middleware
 app.use(express.json());
+app.use(cors({ origin: 'http://localhost:3000' }));
 app.use(express.urlencoded({ extended: true }));
 
 
