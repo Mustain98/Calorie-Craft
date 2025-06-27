@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './SignUp.css';
-import logo from '../logo.png'; // Adjust path if needed
+import logo from '../logo.png'; // Update path if necessary
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -11,7 +11,6 @@ export default function SignupPage() {
     sex: '',
     age: '',
     weight: '',
-    bodyfat: '',
     activityLevel: '',
   });
 
@@ -48,6 +47,7 @@ export default function SignupPage() {
         <form className="signup-form" onSubmit={handleSubmit}>
           <h2>Sign up to get started</h2>
 
+          <label>Username</label>
           <input
             type="text"
             name="username"
@@ -56,6 +56,8 @@ export default function SignupPage() {
             onChange={handleChange}
             required
           />
+
+          <label>Email</label>
           <input
             type="email"
             name="email"
@@ -64,6 +66,8 @@ export default function SignupPage() {
             onChange={handleChange}
             required
           />
+
+          <label>Password</label>
           <input
             type="password"
             name="password"
@@ -72,6 +76,8 @@ export default function SignupPage() {
             onChange={handleChange}
             required
           />
+
+          <label>Confirm Password</label>
           <input
             type="password"
             name="confirmPassword"
@@ -80,14 +86,20 @@ export default function SignupPage() {
             onChange={handleChange}
             required
           />
-          <input
-            type="text"
+
+          <label>Gender</label>
+          <select
             name="sex"
-            placeholder="Enter your sex"
             value={formData.sex}
             onChange={handleChange}
             required
-          />
+          >
+            <option value="">Select Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+
+          <label>Age</label>
           <input
             type="number"
             name="age"
@@ -96,25 +108,24 @@ export default function SignupPage() {
             onChange={handleChange}
             required
           />
+
+          <label>Weight (kg)</label>
           <input
             type="number"
             name="weight"
-            placeholder="Enter your weight (kg)"
+            placeholder="Enter your weight"
             value={formData.weight}
             onChange={handleChange}
             required
           />
 
-          <select name="bodyfat" value={formData.bodyfat} onChange={handleChange} required>
-            <option value="">Select bodyfat % range</option>
-            <option value="10-15%">10–15%</option>
-            <option value="15-20%">15–20%</option>
-            <option value="20-25%">20–25%</option>
-            <option value="25-30%">25–30%</option>
-            <option value="30%+">30%+</option>
-          </select>
-
-          <select name="activityLevel" value={formData.activityLevel} onChange={handleChange} required>
+          <label>Activity Level</label>
+          <select
+            name="activityLevel"
+            value={formData.activityLevel}
+            onChange={handleChange}
+            required
+          >
             <option value="">Select activity level</option>
             <option value="sedentary">Sedentary</option>
             <option value="light">Lightly active</option>

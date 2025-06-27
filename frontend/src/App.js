@@ -1,17 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
 import LandingPage from './pages/LandingPage';
 import SignupPage from './pages/SignUp';
 import SigninPage from './pages/SignIn';
 import ProfilePage from './pages/Profile';
 import ChangePasswordPage from './pages/ChangePassword';
-import ShowAllMeal from './pages/ShowAllMeal'; // Import the new component
-
-// Temporary placeholder components
-const MealPlan = () => <h2 style={{ padding: '2rem' }}>Meal Plan - Feature under development</h2>;
-const CustomizePlan = () => <h2 style={{ padding: '2rem' }}>Customize Plan - Feature under development</h2>;
-const Nutrition = () => <h2 style={{ padding: '2rem' }}>Nutritional Requirement - Feature under development</h2>;
-const GoalSetting = () => <h2 style={{ padding: '2rem' }}>Goal Setting - Feature under development</h2>;
+import ShowAllMeal from './pages/ShowAllMeal';
+import NutritionalRequirement from './pages/NutritionalRequirement';
+import MealPlan from './pages/MealPlan'; // ✅ Import the real MealPlan component
+import GoalSetting from './pages/GoalSetting'; // Optional: replace if you later create this
 
 function App() {
   return (
@@ -22,13 +20,10 @@ function App() {
         <Route path="/login" element={<SigninPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/changepassword" element={<ChangePasswordPage />} />
-        
-        {/* Updated route for ShowAllMeal */}
         <Route path="/showmeal" element={<ShowAllMeal />} />
         <Route path="/mealplan" element={<MealPlan />} />
-        <Route path="/customizeplan" element={<CustomizePlan />} />
-        <Route path="/nutrition" element={<Nutrition />} />
-        <Route path="/goal" element={<GoalSetting />} />
+        <Route path="/nutrition" element={<NutritionalRequirement />} />
+        <Route path="/goal" element={<GoalSetting />} /> {/* You can keep this or replace later */}
       </Routes>
     </Router>
   );
