@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
-import logo from '../logo.png';
+import Navbar from './Navbar';
 import axios from 'axios';
 
 export default function ProfilePage() {
@@ -38,18 +38,8 @@ export default function ProfilePage() {
     fetchUser();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/signin');
-  };
-
   const handleChangePassword = () => {
     navigate('/changepassword');
-  };
-
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
   };
 
   if (!userData) {
@@ -58,46 +48,12 @@ export default function ProfilePage() {
 
   return (
     <div className="profile-page">
-      {/* Toggle Button */}
-      <button className="toggle-btn" onClick={toggleSidebar}>
-        &#8942;
-      </button>
-
-      {/* Sidebar */}
-      {sidebarVisible && (
-        <aside className="sidebar">
-          <div className="sidebar-header">
-            <img src={logo} alt="Calorie Craft" className="sidebar-logo" />
-            <h2>Calorie Craft</h2>
-          </div>
-
-          <div className="sidebar-user">
-            <img
-              src="https://randomuser.me/api/portraits/women/44.jpg"
-              alt="User"
-              className="user-avatar"
-            />
-            <h4>Hello! {userData.name}</h4>
-            <p>{userData.email}</p>
-          </div>
-
-          <div className="sidebar-content">
-            <nav className="sidebar-menu">
-              <button className="active" onClick={() => navigate('/profile')}>Profile</button>
-              <button onClick={() => navigate('/showmeal')}>Show All Meal</button>
-              <button onClick={() => navigate('/mealplan')}>Meal Plan</button>
-              <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
-              <button onClick={() => navigate('/goal')}>Goal Setting</button>
-            </nav>
-
-            <div className="logout-container">
-              <button className="logout-btn" onClick={handleLogout}>
-                Log out
-              </button>
-            </div>
-          </div>
-        </aside>
-      )}
+      <Navbar 
+        sidebarVisible={sidebarVisible}
+        setSidebarVisible={setSidebarVisible}
+        userData={userData}
+        activePage="profile"
+      />
 
       {/* Main content */}
       <main className={`profile-main ${sidebarVisible ? '' : 'sidebar-hidden'}`}>

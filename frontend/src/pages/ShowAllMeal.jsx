@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ShowAllMeal.css';
-import logo from '../logo.png';
+import Navbar from './Navbar';
 
 export default function ShowAllMeal() {
   const navigate = useNavigate();
@@ -10,12 +10,10 @@ export default function ShowAllMeal() {
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [showNutritionModal, setShowNutritionModal] = useState(false);
 
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
-  };
-
-  const handleLogout = () => {
-    navigate('/login');
+  // Mock user data - in real app, this would come from context or API
+  const userData = {
+    name: 'Michael',
+    email: 'michaelcraft67@gmail.com'
   };
 
   const allMeals = [
@@ -106,43 +104,12 @@ export default function ShowAllMeal() {
 
   return (
     <div className="show-meal-page">
-      {/* Toggle Sidebar Button */}
-      <button className="toggle-btn" onClick={toggleSidebar}>
-        &#8942;
-      </button>
-
-      {/* Sidebar */}
-      {sidebarVisible && (
-        <aside className="sidebar">
-          <div className="sidebar-header">
-            <img src={logo} alt="Calorie Craft" className="sidebar-logo" />
-            <h2>Calorie Craft</h2>
-          </div>
-
-          <div className="sidebar-user">
-            <img
-              src="https://randomuser.me/api/portraits/women/44.jpg"
-              alt="User"
-              className="user-avatar"
-            />
-            <h4>Hello! Michael</h4>
-            <p>michaelcraft67@gmail.com</p>
-          </div>
-
-          <div className="sidebar-content">
-            <nav className="sidebar-menu">
-              <button onClick={() => navigate('/profile')}>Profile</button>
-              <button className="active">Show All Meal</button>
-              <button onClick={() => navigate('/mealplan')}>Meal Plan</button>
-              <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
-              <button onClick={() => navigate('/goal')}>Goal Setting</button>
-            </nav>
-            <div className="logout-container">
-              <button className="logout-btn" onClick={handleLogout}>Log out</button>
-            </div>
-          </div>
-        </aside>
-      )}
+      <Navbar 
+        sidebarVisible={sidebarVisible}
+        setSidebarVisible={setSidebarVisible}
+        userData={userData}
+        activePage="showmeal"
+      />
 
       {/* Main content */}
       <main className={`show-meal-content ${!sidebarVisible ? 'sidebar-hidden' : ''}`}>
