@@ -1,100 +1,87 @@
-import React, { useState } from 'react';
+// src/pages/ShowAllMeal.jsx
+
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './ShowAllMeal.css';
-import logo from '../logo.png';
+import Sidebar from './sideBar';
 
 export default function ShowAllMeal() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'my'
+  const [allMeals, setAllMeals] = useState([]);
+  const [userData, setUserData] = useState(null);
   const [selectedMeal, setSelectedMeal] = useState(null);
+  const [showNutritionModal, setShowNutritionModal] = useState(false);
 
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
-  };
+  useEffect(() => {
+    // 1) Fetch all system meals
+    axios
+      .get('http://localhost:4000/api/meal')
+      .then(res => setAllMeals(res.data))
+      .catch(err => console.error('Failed to load meals:', err));
 
+    // 2) Fetch current user for the sidebar
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/signin');
+      return;
+    }
+    axios
+      .get('http://localhost:4000/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => setUserData(res.data))
+      .catch(() => {
+        localStorage.removeItem('token');
+        navigate('/signin');
+      });
+  }, [navigate]);
+
+  const toggleSidebar = () => setSidebarVisible(v => !v);
   const handleLogout = () => {
-    navigate('/login');
+    localStorage.removeItem('token');
+    navigate('/signin');
   };
 
-  const allMeals = [
-    {
-      id: 1,
-      name: 'Grilled Chicken Salad',
-      image: 'https://source.unsplash.com/300x200/?grilled-chicken',
-      calories: 248,
-      fat: 6,
-      carbs: 48,
-      fiber: 12,
-      sugar: 14,
-      protein: 7,
-      cholesterol: 10,
-      vitaminA: '9357 IU',
-      vitaminC: '13 mg',
-      ingredients: ['Chicken Breast', 'Lettuce', 'Olive Oil'],
-    },
-    {
-      id: 2,
-      name: 'Oatmeal with Fruits',
-      image: 'https://source.unsplash.com/300x200/?oatmeal',
-      calories: 210,
-      fat: 4,
-      carbs: 35,
-      fiber: 10,
-      sugar: 9,
-      protein: 5,
-      cholesterol: 0,
-      vitaminA: '5100 IU',
-      vitaminC: '10 mg',
-      ingredients: ['Oats', 'Banana', 'Berries'],
-    },
-  ];
+  // "My Food" tab is empty until you wire up user-specific meals
+  const userMeals = [];
+  const filteredMeals = activeTab === 'my' ? userMeals : allMeals;
 
-  const filteredMeals = activeTab === 'my' ? [] : allMeals;
+  const handleMealClick = meal => {
+    if (activeTab === 'all') {
+      setSelectedMeal(meal);
+      setShowNutritionModal(true);
+    }
+  };
+  const closeNutritionModal = () => {
+    setShowNutritionModal(false);
+    setSelectedMeal(null);
+  };
+  const handleSaveMeal = () => {
+    // TODO: POST to backend to save meal under the user
+    console.log('Saving meal:', selectedMeal);
+    closeNutritionModal();
+  };
 
   return (
     <div className="show-meal-page">
       {/* Toggle Sidebar Button */}
-     <button className="toggle-btn" onClick={toggleSidebar}>
-  &#8942;
-</button>
+      <button className="toggle-btn" onClick={toggleSidebar}>
+        &#8942;
+      </button>
 
+    {userData && (
+    <Sidebar
+    userData={userData}
+    onLogout={handleLogout}       // was handleLogout
+    visible={sidebarVisible}      // was sidebarVisible
+    />
+    )}
 
-      {/* Sidebar */}
-      {sidebarVisible && (
-        <aside className="sidebar">
-          <div className="sidebar-header">
-            <img src={logo} alt="Calorie Craft" className="sidebar-logo" />
-            <h2>Calorie Craft</h2>
-          </div>
-
-          <div className="sidebar-user">
-            <img
-              src="https://randomuser.me/api/portraits/women/44.jpg"
-              alt="User"
-              className="user-avatar"
-            />
-            <h4>Hello! Michael</h4>
-            <p>michaelcraft67@gmail.com</p>
-          </div>
-
-          <div className="sidebar-content">
-            <nav className="sidebar-menu">
-              <button onClick={() => navigate('/profile')}>Profile</button>
-              <button className="active">Show All Meal</button>
-              <button onClick={() => navigate('/mealplan')}>Meal Plan</button>
-              <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
-              <button onClick={() => navigate('/goal')}>Goal Setting</button>
-            </nav>
-            <div className="logout-container">
-              <button className="logout-btn" onClick={handleLogout}>Log out</button>
-            </div>
-          </div>
-        </aside>
-      )}
-
-      {/* Main content */}
-      <main className="show-meal-content">
+      {/* Main Content */}
+      <main className={`show-meal-content ${!sidebarVisible ? 'sidebar-hidden' : ''}`}>
         <div className="top-controls">
           <div className="meal-toggle">
             <button
@@ -112,59 +99,111 @@ export default function ShowAllMeal() {
           </div>
         </div>
 
-        <div className="meal-list">
-          {filteredMeals.map((meal) => (
-            <div
-              key={meal.id}
-              className="meal-card"
-              onClick={() => setSelectedMeal(meal)}
-            >
-              <img src={meal.image} alt={meal.name} />
-              <h3>{meal.name}</h3>
-              <p>Calories: {meal.calories}</p>
+        <div className="meal-container">
+          <div className="meal-list-card">
+            <div className="meal-list">
+              {filteredMeals.length === 0 ? (
+                <div className="empty-state">
+                  {activeTab === 'my' ? 'No saved meals yet' : 'No meals available'}
+                </div>
+              ) : (
+                filteredMeals.map(meal => (
+                  <div
+                    key={meal._id}
+                    className={`meal-card ${activeTab === 'all' ? 'clickable' : ''}`}
+                    onClick={() => handleMealClick(meal)}
+                  >
+                    <img src={meal.imageUrl || meal.image} alt={meal.name} />
+                    <div className="meal-card-content">
+                      <h3>{meal.name}</h3>
+                      <p className="calories">Calories: {meal.totalCalories}</p>
+                      <div className="meal-macros">
+                        <span>Protein: {meal.totalProtein}g</span>
+                        <span>Carbs: {meal.totalCarbs}g</span>
+                        <span>Fat: {meal.totalFat}g</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          ))}
+          </div>
         </div>
       </main>
 
-      {/* Modal */}
-      {selectedMeal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <button className="close-btn" onClick={() => setSelectedMeal(null)}>
+      {/* Nutrition Modal */}
+      {showNutritionModal && selectedMeal && (
+        <div className="modal-overlay" onClick={closeNutritionModal}>
+          <div className="nutrition-modal" onClick={e => e.stopPropagation()}>
+            <button className="close-btn" onClick={closeNutritionModal}>
               &times;
             </button>
 
-            <img src={selectedMeal.image} alt={selectedMeal.name} />
-            <h2>{selectedMeal.name}</h2>
+            <div className="modal-header">
+              <img
+                src={selectedMeal.imageUrl || selectedMeal.image}
+                alt={selectedMeal.name}
+                className="modal-image"
+              />
+              <h2 className="modal-title">{selectedMeal.name}</h2>
+            </div>
 
             <div className="modal-content">
-              <div className="left">
-                <h4>Ingredients</h4>
-                <ul>
-                  {selectedMeal.ingredients.map((ing, i) => (
-                    <li key={i}>{ing}</li>
-                  ))}
-                </ul>
-                <button className="add-btn">add More</button>
+              <div className="ingredients-section">
+                <h3>Ingredients</h3>
+                <div className="ingredients-list">
+                  {selectedMeal.foodItems?.length
+                    ? selectedMeal.foodItems.map((item, idx) => (
+                        <div key={idx} className="ingredient-item">
+                          <img
+                            src={`https://source.unsplash.com/60x60/?${item.food.name}`}
+                            alt={item.food.name}
+                            className="ingredient-image"
+                          />
+                          <span>
+                            {item.quantity}× {item.food.name}
+                          </span>
+                        </div>
+                      ))
+                    : selectedMeal.ingredients?.map((ing, i) => (
+                        <div key={i} className="ingredient-item">
+                          <img
+                            src={`https://source.unsplash.com/60x60/?${ing.toLowerCase()}`}
+                            alt={ing}
+                            className="ingredient-image"
+                          />
+                          <span>{ing}</span>
+                        </div>
+                      ))}
+                </div>
               </div>
-              <div className="right">
-                <h4>Nutritions</h4>
-                <ul>
-                  <li>Calories: {selectedMeal.calories}</li>
-                  <li>Fat: {selectedMeal.fat}g</li>
-                  <li>Carbs: {selectedMeal.carbs}g</li>
-                  <li>Fiber: {selectedMeal.fiber}g</li>
-                  <li>Sugar: {selectedMeal.sugar}g</li>
-                  <li>Protein: {selectedMeal.protein}g</li>
-                  <li>Cholesterol: {selectedMeal.cholesterol}mg</li>
-                  <li>Vitamin A: {selectedMeal.vitaminA}</li>
-                  <li>Vitamin C: {selectedMeal.vitaminC}</li>
-                </ul>
+
+              <div className="nutrition-section">
+                <h3>Nutritions</h3>
+                <div className="nutrition-grid">
+                  <div className="nutrition-item">
+                    <span className="nutrition-label">Calories</span>
+                    <span className="nutrition-value">{selectedMeal.totalCalories}</span>
+                  </div>
+                  <div className="nutrition-item">
+                    <span className="nutrition-label">Protein</span>
+                    <span className="nutrition-value">{selectedMeal.totalProtein}</span>
+                  </div>
+                  <div className="nutrition-item">
+                    <span className="nutrition-label">Carbohydrate</span>
+                    <span className="nutrition-value">{selectedMeal.totalCarbs}</span>
+                  </div>
+                  <div className="nutrition-item">
+                    <span className="nutrition-label">Fat</span>
+                    <span className="nutrition-value">{selectedMeal.totalFat}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <button className="save-btn">Save Changes</button>
+            <button className="save-changes-btn" onClick={handleSaveMeal}>
+              Save Changes
+            </button>
           </div>
         </div>
       )}

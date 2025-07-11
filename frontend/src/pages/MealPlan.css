@@ -462,3 +462,127 @@
     transition: transform 0.3s ease;
   }
 }
+/* ==== View Toggle Buttons ==== */
+.view-toggle-bar {
+  margin-left: 270px;
+  padding: 10px 40px;
+  background-color: #fff;
+  display: flex;
+  gap: 10px;
+}
+
+.view-toggle-bar.sidebar-hidden {
+  margin-left: 0;
+}
+
+.view-toggle-bar button {
+  padding: 6px 16px;
+  border: 1px solid #ddd;
+  background-color: white;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #666;
+}
+
+.view-toggle-bar button.active {
+  background-color: #99d209;
+  color: white;
+  border-color: #99d209;
+}
+
+/* ==== Daily Page Styles ==== */
+.daily-page {
+  margin-left: 270px;
+  padding: 20px 40px;
+  background-color: white;
+  min-height: 100vh;
+}
+
+.daily-page.sidebar-hidden {
+  margin-left: 0;
+}
+
+.daily-header {
+  margin-bottom: 20px;
+}
+
+.daily-container {
+  display: flex;
+  gap: 20px;
+}
+
+.daily-left, .daily-right {
+  flex: 1;
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.daily-meal-card {
+  background-color: white;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.daily-meal-label {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.daily-meal-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.daily-meal-body img {
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.meal-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.meal-name {
+  font-weight: 30000;
+  margin: 0;
+}
+
+.meal-weight {
+  font-size: 12px;
+  color: #777;
+}
+
+/* Nutrition Bar */
+.nutrition-bar {
+  margin-bottom: 12px;
+}
+
+.nutrition-label {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.bar {
+  background-color: #ddd;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.fill {
+  background-color: #99d209;
+  height: 100%;
+}
+
+.nutrition-values {
+  font-size: 12px;
+  color: #555;
+  margin-top: 3px;
+}

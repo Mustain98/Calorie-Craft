@@ -1,93 +1,119 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
-import logo from '../logo.png';
+import Sidebar from './sideBar';
+import axios from 'axios';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [userData, setUserData] = useState(null);
+  const [formData, setFormData] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return navigate('/signin');
+
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get('http://localhost:4000/api/users/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUserData(res.data);
+        setFormData(res.data);
+      } catch (err) {
+        console.error('Failed to fetch user:', err);
+        localStorage.removeItem('token');
+        navigate('/signin');
+      }
+    };
+
+    fetchUser();
+  }, [navigate]);
+
+  const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
   const handleLogout = () => {
-    navigate('/login');
+    localStorage.removeItem('token');
+    navigate('/signin');
+  };
+  const handleChangePassword = () => navigate('/changepassword');
+
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleChangePassword = () => {
-    navigate('/changepassword');
+  const handleUpdateProfile = async () => {
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put('http://localhost:4000/api/users/me', {
+        email: formData.email,
+        age: formData.age,
+        gender: formData.gender,
+        weight: formData.weight,
+        bodyFat: formData.bodyFat,
+        activityLevel: formData.activityLevel
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Profile updated successfully');
+    } catch (err) {
+      alert('Failed to update profile');
+    }
+    setIsSubmitting(false);
   };
 
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
-  };
+  if (!userData) return <p>Loading profile...</p>;
 
   return (
     <div className="profile-page">
-      {/* Toggle Button */}
-      <button className="toggle-btn" onClick={toggleSidebar}>
-        &#8942;
-      </button>
+      <button className="toggle-btn" onClick={toggleSidebar}>&#8942;</button>
 
-      {/* Sidebar */}
-      {sidebarVisible && (
-        <aside className="sidebar">
-          <div className="sidebar-header">
-            <img src={logo} alt="Calorie Craft" className="sidebar-logo" />
-            <h2>Calorie Craft</h2>
-          </div>
-
-          <div className="sidebar-user">
-            <img
-              src="https://randomuser.me/api/portraits/women/44.jpg"
-              alt="User"
-              className="user-avatar"
-            />
-            <h4>Hello! Siu</h4>
-            <p>siu@gmail.com</p>
-          </div>
-
-          <div className="sidebar-content">
-            <nav className="sidebar-menu">
-              <button className="active" onClick={() => navigate('/profile')}>Profile</button>
-              <button onClick={() => navigate('/showmeal')}>Show All Meal</button>
-              <button onClick={() => navigate('/mealplan')}>Meal Plan</button>
-              <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
-              <button onClick={() => navigate('/goal')}>Goal Setting</button>
-            </nav>
-
-            <div className="logout-container">
-              <button className="logout-btn" onClick={handleLogout}>
-                Log out
-              </button>
-            </div>
-          </div>
-        </aside>
+      {userData && (
+        <Sidebar
+          visible={sidebarVisible}
+          onLogout={handleLogout}
+          userData={userData}
+        />
       )}
 
-      {/* Main content */}
       <main className={`profile-main ${sidebarVisible ? '' : 'sidebar-hidden'}`}>
         <div className="profile-form-container">
-          <form className="profile-form">
+          <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
             <div className="form-header">
               <h2>Your Profile</h2>
-              <button type="button" className="update-btn">Update Profile</button>
+              <button
+                type="button"
+                className="update-btn"
+                onClick={handleUpdateProfile}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Updating...' : 'Update Profile'}
+              </button>
             </div>
 
             <label>Email address</label>
-            <input type="email" value="email@gmail.com" readOnly />
+            <input type="text" name="email" value={formData.email || ''} onChange={handleChange} />
 
             <label>Sex</label>
-            <input type="text" value="Male" readOnly />
+            <input type="text" name="gender" value={formData.gender || ''} onChange={handleChange} />
 
             <label>Age</label>
-            <input type="number" value="50" readOnly />
+            <input type="text" name="age" value={formData.age || ''} onChange={handleChange} />
 
             <label>Weight (kg)</label>
-            <input type="number" value="70" readOnly />
+            <input type="text" name="weight" value={formData.weight || ''} onChange={handleChange} />
 
             <label>Body Fat (%)</label>
-            <input type="number" value="20" readOnly />
+            <input type="text" name="bodyFat" value={formData.bodyFat || ''} onChange={handleChange} />
 
             <label>Activity Level</label>
-            <input type="text" value="Moderate" readOnly />
+            <input type="text" name="activityLevel" value={formData.activityLevel || ''} onChange={handleChange} />
 
             <button
               type="button"

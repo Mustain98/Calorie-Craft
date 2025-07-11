@@ -1,38 +1,161 @@
 import React, { useEffect, useState } from 'react';
-import './NutritionalRequirement.css';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+import Sidebar from './sideBar';
+import './NutritionalRequirement.css';
 
 export default function NutritionalRequirement() {
   const navigate = useNavigate();
-
-  const [nutritionData, setNutritionData] = useState({
-    calories: 1475,
-    carbs: { min: 13, max: 185 },
-    fats: { min: 39, max: 82 },
-    proteins: { min: 56, max: 185 },
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [userData, setUserData] = useState(null);
+  const [manualMode, setManualMode] = useState(false);
+  const [formValues, setFormValues] = useState({
+    calories: '',
+    protein: '',
+    carbs: '',
+    fats: '',
   });
+  const [loading, setLoading] = useState(true);
 
-  // Future backend fetch will go here
-  useEffect(() => {
-    // fetch('/api/nutrition').then(...).then(data => setNutritionData(data));
-  }, []);
-
-  const handleBack = () => {
-    navigate(-1);
+  // Fetch user → get nutritionalRequirement
+  const fetchUser = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return navigate('/signin');
+    try {
+      const res = await axios.get('http://localhost:4000/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUserData(res.data);
+      setFormValues(res.data.nutritionalRequirement);
+    } catch {
+      localStorage.clear();
+      navigate('/signin');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchUser();
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/signin');
+  };
+
+  const toggleSidebar = () => setSidebarVisible(v => !v);
+
+  const handleSetDefault = async () => {
+    setLoading(true);
+    // backend will recalc because manualNutrition = false
+    await axios.put('http://localhost:4000/api/users/me', {
+      manualNutrition: false
+    }, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    setManualMode(false);
+    fetchUser();
+  };
+
+  const handleSetManual = () => {
+    setManualMode(true);
+  };
+
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setFormValues(v => ({ ...v, [name]: value }));
+  };
+
+  const handleSaveManual = async () => {
+    setLoading(true);
+    await axios.put('http://localhost:4000/api/users/me', {
+      manualNutrition: true,
+      nutritionalRequirement: {
+        calories: Number(formValues.calories),
+        protein:  Number(formValues.protein),
+        carbs:    Number(formValues.carbs),
+        fats:     Number(formValues.fats),
+      }
+    }, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    setManualMode(false);
+    fetchUser();
+  };
+
+  if (loading) return <div className="nutri-loading">Loading...</div>;
+
+  const targets = userData.nutritionalRequirement;
 
   return (
     <div className="nutrition-page">
-      <button className="back-btn" onClick={handleBack}>← Back</button>
+      <button className="toggle-btn" onClick={toggleSidebar}>⋮</button>
+      {userData && (
+        <Sidebar
+          visible={sidebarVisible}
+          onLogout={handleLogout}
+          userData={userData}
+        />
+      )}
 
       <div className="nutrition-card">
-        <h2>My Nutrition Targets</h2>
-        <p className="calories">{nutritionData.calories} Calories</p>
-        <ul className="nutrition-list">
-          <li><span className="dot yellow"></span>{nutritionData.carbs.min} - {nutritionData.carbs.max}g Carbs</li>
-          <li><span className="dot cyan"></span>{nutritionData.fats.min} - {nutritionData.fats.max}g Fats</li>
-          <li><span className="dot purple"></span>{nutritionData.proteins.min} - {nutritionData.proteins.max}g Proteins</li>
-        </ul>
+        <header>
+          <h2>My Nutrition Targets</h2>
+          <p className="calories">{targets.calories} kcal</p>
+        </header>
+
+        <div className="mode-buttons">
+          <button
+            className="mode-btn"
+            onClick={handleSetDefault}
+            disabled={loading || !manualMode}
+          >
+            Set Default
+          </button>
+          <button
+            className="mode-btn"
+            onClick={handleSetManual}
+            disabled={manualMode}
+          >
+            Set Manual
+          </button>
+        </div>
+
+        {manualMode ? (
+          <div className="manual-form">
+            {['calories','protein','carbs','fats'].map(key => (
+              <label key={key}>
+                {key.charAt(0).toUpperCase() + key.slice(1)}:
+                <input
+                  type="number"
+                  name={key}
+                  value={formValues[key]}
+                  onChange={handleChange}
+                />
+              </label>
+            ))}
+            <button className="save-manual-btn" onClick={handleSaveManual}>
+              Save
+            </button>
+          </div>
+        ) : (
+          <ul className="nutrition-list">
+            <li>
+              <span className="dot yellow" />
+              {targets.carbs} g Carbs
+            </li>
+            <li>
+              <span className="dot cyan" />
+              {targets.fats} g Fats
+            </li>
+            <li>
+              <span className="dot purple" />
+              {targets.protein} g Protein
+            </li>
+          </ul>
+        )}
       </div>
     </div>
   );
