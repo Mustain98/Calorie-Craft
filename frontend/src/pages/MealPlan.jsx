@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../pages/Navbar';
 import './MealPlan.css';
+import logo from '../logo.png';
 
 export default function MealPlan() {
   const navigate = useNavigate();
@@ -9,10 +9,12 @@ export default function MealPlan() {
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Mock user data - replace with actual user data from your auth system
-  const userData = {
-    name: 'Michael',
-    email: 'michaelcraft67@gmail.com'
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible);
+  };
+
+  const handleLogout = () => {
+    navigate('/login');
   };
 
   const handleMealClick = (meal, dayName) => {
@@ -131,12 +133,43 @@ export default function MealPlan() {
 
   return (
     <div className="meal-plan-page">
-      <Navbar 
-        sidebarVisible={sidebarVisible}
-        setSidebarVisible={setSidebarVisible}
-        userData={userData}
-        activePage="mealplan"
-      />
+      {/* Toggle Sidebar Button */}
+      <button className="toggle-btn" onClick={toggleSidebar}>
+        &#8942;
+      </button>
+
+      {/* Sidebar */}
+      {sidebarVisible && (
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <img src={logo} alt="Calorie Craft" className="sidebar-logo" />
+            <h2>Calorie Craft</h2>
+          </div>
+
+          <div className="sidebar-user">
+            <img
+              src="https://randomuser.me/api/portraits/men/75.jpg"
+              alt="User"
+              className="user-avatar"
+            />
+            <h4>Hello! Michael</h4>
+            <p>michaelcraft67@gmail.com</p>
+          </div>
+
+          <div className="sidebar-content">
+            <nav className="sidebar-menu">
+              <button onClick={() => navigate('/profile')}>Profile</button>
+              <button onClick={() => navigate('/showmeal')}>Show All Meal</button>
+              <button className="active">Meal Plan</button>
+              <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
+              <button onClick={() => navigate('/goal')}>Goal Setting</button>
+            </nav>
+            <div className="logout-container">
+              <button className="logout-btn" onClick={handleLogout}>Log out</button>
+            </div>
+          </div>
+        </aside>
+      )}
 
       {/* Main Content */}
       <main className={`meal-plan-content ${!sidebarVisible ? 'sidebar-hidden' : ''}`}>
