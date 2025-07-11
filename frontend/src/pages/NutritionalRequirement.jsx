@@ -1,37 +1,52 @@
 import React, { useEffect, useState } from 'react';
-import './NutritionalRequirement.css';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import './NutritionalRequirement.css';
 
 export default function NutritionalRequirement() {
   const navigate = useNavigate();
+  const [data, setData] = useState(null);
 
-  const [nutritionData, setNutritionData] = useState({
-    calories: 1475,
-    carbs: { min: 13, max: 185 },
-    fats: { min: 39, max: 82 },
-    proteins: { min: 56, max: 185 },
-  });
-
-  // Future backend fetch will go here
   useEffect(() => {
-    // fetch('/api/nutrition').then(...).then(data => setNutritionData(data));
-  }, []);
+    const token = localStorage.getItem('token');
+    if (!token) return navigate('/signin');
 
-  const handleBack = () => {
-    navigate(-1);
-  };
+    axios
+      .get('http://localhost:4000/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => {
+        setData(res.data.nutritionalRequirement);
+      })
+      .catch(() => {
+        localStorage.removeItem('token');
+        navigate('/signin');
+      });
+  }, [navigate]);
+
+  if (!data) return <div className="nutri-loading">Loading...</div>;
 
   return (
     <div className="nutrition-page">
-      <button className="back-btn" onClick={handleBack}>← Back</button>
-
+      <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
       <div className="nutrition-card">
-        <h2>My Nutrition Targets</h2>
-        <p className="calories">{nutritionData.calories} Calories</p>
+        <header>
+          <h2>My Nutrition Targets</h2>
+          <p className="calories">{data.calories} kcal</p>
+        </header>
         <ul className="nutrition-list">
-          <li><span className="dot yellow"></span>{nutritionData.carbs.min} - {nutritionData.carbs.max}g Carbs</li>
-          <li><span className="dot cyan"></span>{nutritionData.fats.min} - {nutritionData.fats.max}g Fats</li>
-          <li><span className="dot purple"></span>{nutritionData.proteins.min} - {nutritionData.proteins.max}g Proteins</li>
+          <li>
+            <span className="dot yellow" />
+            {data.carbs} g Carbs
+          </li>
+          <li>
+            <span className="dot cyan" />
+            {data.fats} g Fats
+          </li>
+          <li>
+            <span className="dot purple" />
+            {data.protein} g Protein
+          </li>
         </ul>
       </div>
     </div>

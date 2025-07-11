@@ -43,6 +43,12 @@ const UserSchema = new mongoose.Schema({
     carbs: Number,
     fats: Number
   },
+    myMeals: [ 
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'meal'
+    }
+  ],
   weekPlan: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'weekPlan'

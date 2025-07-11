@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+// src/pages/ShowAllMeal.jsx
+
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './ShowAllMeal.css';
 import logo from '../logo.png';
 
@@ -7,99 +10,57 @@ export default function ShowAllMeal() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'my'
+  const [allMeals, setAllMeals] = useState([]);
+  const [userData, setUserData] = useState(null);
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [showNutritionModal, setShowNutritionModal] = useState(false);
 
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
-  };
+  useEffect(() => {
+    // 1) Fetch all system meals
+    axios
+      .get('http://localhost:4000/api/meal')
+      .then(res => setAllMeals(res.data))
+      .catch(err => console.error('Failed to load meals:', err));
 
-  const handleLogout = () => {
-    navigate('/login');
-  };
-
-  const allMeals = [
-    {
-      id: 1,
-      name: 'Grilled Chicken Salad',
-      image: 'https://source.unsplash.com/300x200/?grilled-chicken',
-      calories: 248,
-      fat: 6,
-      carbs: 48,
-      fiber: 12,
-      sugar: 14,
-      protein: 7,
-      cholesterol: 10,
-      vitaminA: '9357 IU',
-      vitaminC: '13 mg',
-      ingredients: ['Chicken Breast', 'Lettuce', 'Olive Oil', 'Cherry Tomatoes'],
-    },
-    {
-      id: 2,
-      name: 'Oatmeal with Fruits',
-      image: 'https://source.unsplash.com/300x200/?oatmeal',
-      calories: 210,
-      fat: 4,
-      carbs: 35,
-      fiber: 10,
-      sugar: 9,
-      protein: 5,
-      cholesterol: 0,
-      vitaminA: '5100 IU',
-      vitaminC: '10 mg',
-      ingredients: ['Oats', 'Banana', 'Berries', 'Milk'],
-    },
-    {
-      id: 3,
-      name: 'Salmon with Vegetables',
-      image: 'https://source.unsplash.com/300x200/?salmon',
-      calories: 320,
-      fat: 18,
-      carbs: 12,
-      fiber: 4,
-      sugar: 6,
-      protein: 28,
-      cholesterol: 75,
-      vitaminA: '1200 IU',
-      vitaminC: '25 mg',
-      ingredients: ['Salmon Fillet', 'Broccoli', 'Carrots', 'Olive Oil'],
-    },
-    {
-      id: 4,
-      name: 'Quinoa Bowl',
-      image: 'https://source.unsplash.com/300x200/?quinoa',
-      calories: 280,
-      fat: 8,
-      carbs: 42,
-      fiber: 8,
-      sugar: 4,
-      protein: 12,
-      cholesterol: 0,
-      vitaminA: '3400 IU',
-      vitaminC: '18 mg',
-      ingredients: ['Quinoa', 'Black Beans', 'Avocado', 'Bell Peppers'],
+    // 2) Fetch current user for the sidebar
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/signin');
+      return;
     }
-  ];
+    axios
+      .get('http://localhost:4000/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => setUserData(res.data))
+      .catch(() => {
+        localStorage.removeItem('token');
+        navigate('/signin');
+      });
+  }, [navigate]);
 
-  // User's saved meals (empty for now, will be populated from backend)
+  const toggleSidebar = () => setSidebarVisible(v => !v);
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/signin');
+  };
+
+  // "My Food" tab is empty until you wire up user-specific meals
   const userMeals = [];
-
   const filteredMeals = activeTab === 'my' ? userMeals : allMeals;
 
-  const handleMealClick = (meal) => {
+  const handleMealClick = meal => {
     if (activeTab === 'all') {
       setSelectedMeal(meal);
       setShowNutritionModal(true);
     }
   };
-
   const closeNutritionModal = () => {
     setShowNutritionModal(false);
     setSelectedMeal(null);
   };
-
   const handleSaveMeal = () => {
-    // TODO: Implement save to backend
+    // TODO: POST to backend to save meal under the user
     console.log('Saving meal:', selectedMeal);
     closeNutritionModal();
   };
@@ -125,8 +86,8 @@ export default function ShowAllMeal() {
               alt="User"
               className="user-avatar"
             />
-            <h4>Hello! Michael</h4>
-            <p>michaelcraft67@gmail.com</p>
+            <h4>Hello! {userData?.name || 'Guest'}</h4>
+            <p>{userData?.email || ''}</p>
           </div>
 
           <div className="sidebar-content">
@@ -138,13 +99,15 @@ export default function ShowAllMeal() {
               <button onClick={() => navigate('/goal')}>Goal Setting</button>
             </nav>
             <div className="logout-container">
-              <button className="logout-btn" onClick={handleLogout}>Log out</button>
+              <button className="logout-btn" onClick={handleLogout}>
+                Log out
+              </button>
             </div>
           </div>
         </aside>
       )}
 
-      {/* Main content */}
+      {/* Main Content */}
       <main className={`show-meal-content ${!sidebarVisible ? 'sidebar-hidden' : ''}`}>
         <div className="top-controls">
           <div className="meal-toggle">
@@ -164,7 +127,6 @@ export default function ShowAllMeal() {
         </div>
 
         <div className="meal-container">
-          {/* White background card */}
           <div className="meal-list-card">
             <div className="meal-list">
               {filteredMeals.length === 0 ? (
@@ -172,20 +134,20 @@ export default function ShowAllMeal() {
                   {activeTab === 'my' ? 'No saved meals yet' : 'No meals available'}
                 </div>
               ) : (
-                filteredMeals.map((meal) => (
+                filteredMeals.map(meal => (
                   <div
-                    key={meal.id}
+                    key={meal._id}
                     className={`meal-card ${activeTab === 'all' ? 'clickable' : ''}`}
                     onClick={() => handleMealClick(meal)}
                   >
-                    <img src={meal.image} alt={meal.name} />
+                    <img src={meal.imageUrl || meal.image} alt={meal.name} />
                     <div className="meal-card-content">
                       <h3>{meal.name}</h3>
-                      <p className="calories">Calories: {meal.calories}</p>
+                      <p className="calories">Calories: {meal.totalCalories}</p>
                       <div className="meal-macros">
-                        <span>Protein: {meal.protein}g</span>
-                        <span>Carbs: {meal.carbs}g</span>
-                        <span>Fat: {meal.fat}g</span>
+                        <span>Protein: {meal.totalProtein}g</span>
+                        <span>Carbs: {meal.totalCarbs}g</span>
+                        <span>Fat: {meal.totalFat}g</span>
                       </div>
                     </div>
                   </div>
@@ -199,13 +161,17 @@ export default function ShowAllMeal() {
       {/* Nutrition Modal */}
       {showNutritionModal && selectedMeal && (
         <div className="modal-overlay" onClick={closeNutritionModal}>
-          <div className="nutrition-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="nutrition-modal" onClick={e => e.stopPropagation()}>
             <button className="close-btn" onClick={closeNutritionModal}>
               &times;
             </button>
 
             <div className="modal-header">
-              <img src={selectedMeal.image} alt={selectedMeal.name} className="modal-image" />
+              <img
+                src={selectedMeal.imageUrl || selectedMeal.image}
+                alt={selectedMeal.name}
+                className="modal-image"
+              />
               <h2 className="modal-title">{selectedMeal.name}</h2>
             </div>
 
@@ -213,18 +179,30 @@ export default function ShowAllMeal() {
               <div className="ingredients-section">
                 <h3>Ingredients</h3>
                 <div className="ingredients-list">
-                  {selectedMeal.ingredients.map((ingredient, index) => (
-                    <div key={index} className="ingredient-item">
-                      <img 
-                        src={`https://source.unsplash.com/60x60/?${ingredient.toLowerCase()}`} 
-                        alt={ingredient}
-                        className="ingredient-image"
-                      />
-                      <span>{ingredient}</span>
-                    </div>
-                  ))}
+                  {selectedMeal.foodItems?.length
+                    ? selectedMeal.foodItems.map((item, idx) => (
+                        <div key={idx} className="ingredient-item">
+                          <img
+                            src={`https://source.unsplash.com/60x60/?${item.food.name}`}
+                            alt={item.food.name}
+                            className="ingredient-image"
+                          />
+                          <span>
+                            {item.quantity}× {item.food.name}
+                          </span>
+                        </div>
+                      ))
+                    : selectedMeal.ingredients?.map((ing, i) => (
+                        <div key={i} className="ingredient-item">
+                          <img
+                            src={`https://source.unsplash.com/60x60/?${ing.toLowerCase()}`}
+                            alt={ing}
+                            className="ingredient-image"
+                          />
+                          <span>{ing}</span>
+                        </div>
+                      ))}
                 </div>
-                <button className="add-more-btn">add More</button>
               </div>
 
               <div className="nutrition-section">
@@ -232,87 +210,21 @@ export default function ShowAllMeal() {
                 <div className="nutrition-grid">
                   <div className="nutrition-item">
                     <span className="nutrition-label">Calories</span>
-                    <span className="nutrition-value">{selectedMeal.calories}</span>
-                    <div className="nutrition-bar">
-                      <div className="nutrition-fill" style={{width: '12%', backgroundColor: '#ff6b6b'}}></div>
-                    </div>
-                    <span className="nutrition-percent">12%</span>
+                    <span className="nutrition-value">{selectedMeal.totalCalories}</span>
                   </div>
-
-                  <div className="nutrition-item">
-                    <span className="nutrition-label">Fat</span>
-                    <span className="nutrition-value">{selectedMeal.fat}g</span>
-                    <div className="nutrition-bar">
-                      <div className="nutrition-fill" style={{width: '0%', backgroundColor: '#4ecdc4'}}></div>
-                    </div>
-                    <span className="nutrition-percent">0%</span>
-                  </div>
-
-                  <div className="nutrition-item">
-                    <span className="nutrition-label">Carbs</span>
-                    <span className="nutrition-value">{selectedMeal.carbs}g</span>
-                    <div className="nutrition-bar">
-                      <div className="nutrition-fill" style={{width: '16%', backgroundColor: '#45b7d1'}}></div>
-                    </div>
-                    <span className="nutrition-percent">16%</span>
-                  </div>
-
-                  <div className="nutrition-item">
-                    <span className="nutrition-label">Fiber</span>
-                    <span className="nutrition-value">{selectedMeal.fiber}g</span>
-                    <div className="nutrition-bar">
-                      <div className="nutrition-fill" style={{width: '43%', backgroundColor: '#96ceb4'}}></div>
-                    </div>
-                    <span className="nutrition-percent">43%</span>
-                  </div>
-
-                  <div className="nutrition-item">
-                    <span className="nutrition-label">Sugar</span>
-                    <span className="nutrition-value">{selectedMeal.sugar}g</span>
-                    <div className="nutrition-bar">
-                      <div className="nutrition-fill" style={{width: '10%', backgroundColor: '#feca57'}}></div>
-                    </div>
-                    <span className="nutrition-percent">10%</span>
-                  </div>
-
                   <div className="nutrition-item">
                     <span className="nutrition-label">Protein</span>
-                    <span className="nutrition-value">{selectedMeal.protein}g</span>
-                    <div className="nutrition-bar">
-                      <div className="nutrition-fill" style={{width: '14%', backgroundColor: '#ff9ff3'}}></div>
-                    </div>
-                    <span className="nutrition-percent">14%</span>
+                    <span className="nutrition-value">{selectedMeal.totalProtein}</span>
                   </div>
-
                   <div className="nutrition-item">
-                    <span className="nutrition-label">Cholesterol</span>
-                    <span className="nutrition-value">{selectedMeal.cholesterol}mg</span>
-                    <div className="nutrition-bar">
-                      <div className="nutrition-fill" style={{width: '20%', backgroundColor: '#54a0ff'}}></div>
-                    </div>
-                    <span className="nutrition-percent">20%</span>
+                    <span className="nutrition-label">Carbohydrate</span>
+                    <span className="nutrition-value">{selectedMeal.totalCarbs}</span>
                   </div>
-
                   <div className="nutrition-item">
-                    <span className="nutrition-label">Vitamin A</span>
-                    <span className="nutrition-value">{selectedMeal.vitaminA}</span>
-                    <div className="nutrition-bar">
-                      <div className="nutrition-fill" style={{width: '26%', backgroundColor: '#5f27cd'}}></div>
-                    </div>
-                    <span className="nutrition-percent">26%</span>
-                  </div>
-
-                  <div className="nutrition-item">
-                    <span className="nutrition-label">Vitamin C</span>
-                    <span className="nutrition-value">{selectedMeal.vitaminC}</span>
-                    <div className="nutrition-bar">
-                      <div className="nutrition-fill" style={{width: '14%', backgroundColor: '#00d2d3'}}></div>
-                    </div>
-                    <span className="nutrition-percent">14%</span>
+                    <span className="nutrition-label">Fat</span>
+                    <span className="nutrition-value">{selectedMeal.totalFat}</span>
                   </div>
                 </div>
-
-                <button className="more-btn">More</button>
               </div>
             </div>
 
