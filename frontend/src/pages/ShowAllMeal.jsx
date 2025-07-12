@@ -40,10 +40,6 @@ export default function ShowAllMeal() {
   }, [navigate]);
 
   const toggleSidebar = () => setSidebarVisible(v => !v);
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/signin');
-  };
 
   // "My Food" tab is empty until you wire up user-specific meals
   const userMeals = [];
@@ -75,7 +71,6 @@ export default function ShowAllMeal() {
     {userData && (
     <Sidebar
     userData={userData}
-    onLogout={handleLogout}       // was handleLogout
     visible={sidebarVisible}      // was sidebarVisible
     />
     )}

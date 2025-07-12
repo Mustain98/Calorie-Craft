@@ -5,11 +5,18 @@ import './sideBar.css';
 
 export default function Sidebar({
   visible,
-  onLogout,
   userData = {},
 }) {
   const navigate = useNavigate();
   if (!visible) return null;
+
+  const handleLogout = () => {
+    setTimeout(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  }, 1000);
+  };
 
   const { name = 'Guest', email = '', avatar } = userData;
 
@@ -40,7 +47,7 @@ export default function Sidebar({
       </nav>
 
       <div className="logout-container">
-        <button className="logout-btn" onClick={onLogout}>
+        <button className="logout-btn" onClick={handleLogout}>
           Log out
         </button>
       </div>
