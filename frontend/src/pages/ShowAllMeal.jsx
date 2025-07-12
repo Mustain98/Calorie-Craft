@@ -1,6 +1,4 @@
-// src/pages/ShowAllMeal.jsx
-
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './ShowAllMeal.css';
@@ -9,78 +7,134 @@ import Sidebar from './sideBar';
 export default function ShowAllMeal() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'my'
-  const [allMeals, setAllMeals] = useState([]);
-  const [userData, setUserData] = useState(null);
+  const [activeTab, setActiveTab] = useState('all');
+  const [meals, setMeals] = useState([]);
+  const [userMeals, setUserMeals] = useState([]);
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [showNutritionModal, setShowNutritionModal] = useState(false);
+  const [newIngredient, setNewIngredient] = useState('');
+  const [showAddIngredient, setShowAddIngredient] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [userData, setUserData] = useState(null);
 
+  // Fetch all meals and user data
   useEffect(() => {
-    // 1) Fetch all system meals
-    axios
-      .get('http://localhost:4000/api/meal')
-      .then(res => setAllMeals(res.data))
-      .catch(err => console.error('Failed to load meals:', err));
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
 
-    // 2) Fetch current user for the sidebar
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/signin');
-      return;
-    }
-    axios
-      .get('http://localhost:4000/api/users/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then(res => setUserData(res.data))
-      .catch(() => {
-        localStorage.removeItem('token');
-        navigate('/signin');
-      });
+        // Fetch all meals
+        const mealsRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/meals`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMeals(mealsRes.data);
+
+        // Fetch user's saved meals
+        const userRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUserData(userRes.data);
+        setUserMeals(userRes.data.savedMeals || []);
+
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        if (err.response?.status === 401) {
+          localStorage.removeItem('token');
+          navigate('/login');
+        }
+      }
+    };
+
+    fetchData();
   }, [navigate]);
 
-  const toggleSidebar = () => setSidebarVisible(v => !v);
+  const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
   const handleLogout = () => {
     localStorage.removeItem('token');
-    navigate('/signin');
+    navigate('/login');
   };
 
-  // "My Food" tab is empty until you wire up user-specific meals
-  const userMeals = [];
-  const filteredMeals = activeTab === 'my' ? userMeals : allMeals;
-
-  const handleMealClick = meal => {
-    if (activeTab === 'all') {
-      setSelectedMeal(meal);
-      setShowNutritionModal(true);
-    }
+  const handleMealClick = (meal) => {
+    setSelectedMeal(meal);
+    setShowNutritionModal(true);
+    setShowAddIngredient(false);
+    setNewIngredient('');
   };
+
   const closeNutritionModal = () => {
     setShowNutritionModal(false);
     setSelectedMeal(null);
   };
-  const handleSaveMeal = () => {
-    // TODO: POST to backend to save meal under the user
-    console.log('Saving meal:', selectedMeal);
-    closeNutritionModal();
+
+  const handleAddIngredient = async () => {
+    if (!newIngredient.trim()) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/meals/${selectedMeal._id}/ingredients`,
+        { ingredient: newIngredient.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setSelectedMeal(res.data.updatedMeal);
+      setMeals(meals.map(meal => 
+        meal._id === res.data.updatedMeal._id ? res.data.updatedMeal : meal
+      ));
+      setNewIngredient('');
+      setShowAddIngredient(false);
+    } catch (err) {
+      console.error('Error adding ingredient:', err);
+      alert('Failed to add ingredient');
+    }
   };
+
+  const handleSaveMeal = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/users/save-meal`,
+        { mealId: selectedMeal._id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Refresh user meals
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUserMeals(res.data.savedMeals || []);
+      
+      alert('Meal saved successfully!');
+      closeNutritionModal();
+    } catch (err) {
+      console.error('Error saving meal:', err);
+      alert('Failed to save meal');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredMeals = activeTab === 'my' ? userMeals : meals;
 
   return (
     <div className="show-meal-page">
-      {/* Toggle Sidebar Button */}
       <button className="toggle-btn" onClick={toggleSidebar}>
-        &#8942;
+        ☰
       </button>
 
-    {userData && (
-    <Sidebar
-    userData={userData}
-    onLogout={handleLogout}       // was handleLogout
-    visible={sidebarVisible}      // was sidebarVisible
-    />
-    )}
+      {sidebarVisible && userData && (
+        <Sidebar
+          userData={userData}
+          onLogout={handleLogout}
+          visible={sidebarVisible}
+        />
+      )}
 
-      {/* Main Content */}
       <main className={`show-meal-content ${!sidebarVisible ? 'sidebar-hidden' : ''}`}>
         <div className="top-controls">
           <div className="meal-toggle">
@@ -111,16 +165,24 @@ export default function ShowAllMeal() {
                   <div
                     key={meal._id}
                     className={`meal-card ${activeTab === 'all' ? 'clickable' : ''}`}
-                    onClick={() => handleMealClick(meal)}
+                    onClick={() => activeTab === 'all' && handleMealClick(meal)}
                   >
-                    <img src={meal.imageUrl || meal.image} alt={meal.name} />
+                    <div className="meal-card-image-container">
+                      <img
+                        src={`${process.env.REACT_APP_API_URL}/${meal.imageUrl}`}
+                        alt={meal.name}
+                        className="meal-card-image"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/300x200?text=Meal+Image';
+                        }}
+                      />
+                    </div>
                     <div className="meal-card-content">
-                      <h3>{meal.name}</h3>
-                      <p className="calories">Calories: {meal.totalCalories}</p>
-                      <div className="meal-macros">
-                        <span>Protein: {meal.totalProtein}g</span>
-                        <span>Carbs: {meal.totalCarbs}g</span>
-                        <span>Fat: {meal.totalFat}g</span>
+                      <h3 className="meal-card-title">{meal.name}</h3>
+                      <div className="meal-card-macros">
+                        <span className="macro-protein">{meal.nutrition.protein.value} Protein</span>
+                        <span className="macro-carbs">{meal.nutrition.carbs.value} Carbs</span>
+                        <span className="macro-fat">{meal.nutrition.fat.value} Fat</span>
                       </div>
                     </div>
                   </div>
@@ -131,79 +193,90 @@ export default function ShowAllMeal() {
         </div>
       </main>
 
-      {/* Nutrition Modal */}
       {showNutritionModal && selectedMeal && (
         <div className="modal-overlay" onClick={closeNutritionModal}>
           <div className="nutrition-modal" onClick={e => e.stopPropagation()}>
             <button className="close-btn" onClick={closeNutritionModal}>
-              &times;
+              ×
             </button>
 
             <div className="modal-header">
               <img
-                src={selectedMeal.imageUrl || selectedMeal.image}
+                src={`${process.env.REACT_APP_API_URL}/${selectedMeal.imageUrl}`}
                 alt={selectedMeal.name}
                 className="modal-image"
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/600x400?text=Meal+Image';
+                }}
               />
               <h2 className="modal-title">{selectedMeal.name}</h2>
             </div>
 
-            <div className="modal-content">
-              <div className="ingredients-section">
-                <h3>Ingredients</h3>
-                <div className="ingredients-list">
-                  {selectedMeal.foodItems?.length
-                    ? selectedMeal.foodItems.map((item, idx) => (
-                        <div key={idx} className="ingredient-item">
-                          <img
-                            src={`https://source.unsplash.com/60x60/?${item.food.name}`}
-                            alt={item.food.name}
-                            className="ingredient-image"
-                          />
-                          <span>
-                            {item.quantity}× {item.food.name}
-                          </span>
-                        </div>
-                      ))
-                    : selectedMeal.ingredients?.map((ing, i) => (
-                        <div key={i} className="ingredient-item">
-                          <img
-                            src={`https://source.unsplash.com/60x60/?${ing.toLowerCase()}`}
-                            alt={ing}
-                            className="ingredient-image"
-                          />
-                          <span>{ing}</span>
-                        </div>
-                      ))}
+            <div className="modal-sections">
+              <div className="ingredients-section gray-bg">
+                <div className="ingredients-header">
+                  <h3>Ingredients</h3>
+                  <button 
+                    className="toggle-add-ingredient"
+                    onClick={() => setShowAddIngredient(!showAddIngredient)}
+                  >
+                    {showAddIngredient ? 'Cancel' : 'Add Ingredient +'}
+                  </button>
                 </div>
+
+                {showAddIngredient && (
+                  <div className="add-ingredient-form">
+                    <input
+                      type="text"
+                      value={newIngredient}
+                      onChange={(e) => setNewIngredient(e.target.value)}
+                      placeholder="Enter new ingredient"
+                      className="ingredient-input"
+                    />
+                    <button 
+                      onClick={handleAddIngredient}
+                      className="add-ingredient-btn"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+
+                <ul className="ingredients-list">
+                  {selectedMeal.ingredients.map((ingredient, index) => (
+                    <li key={index} className="ingredient-item">
+                      {ingredient}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              <div className="nutrition-section">
+              <div className="nutrition-section gray-bg">
                 <h3>Nutritions</h3>
                 <div className="nutrition-grid">
-                  <div className="nutrition-item">
-                    <span className="nutrition-label">Calories</span>
-                    <span className="nutrition-value">{selectedMeal.totalCalories}</span>
-                  </div>
-                  <div className="nutrition-item">
-                    <span className="nutrition-label">Protein</span>
-                    <span className="nutrition-value">{selectedMeal.totalProtein}</span>
-                  </div>
-                  <div className="nutrition-item">
-                    <span className="nutrition-label">Carbohydrate</span>
-                    <span className="nutrition-value">{selectedMeal.totalCarbs}</span>
-                  </div>
-                  <div className="nutrition-item">
-                    <span className="nutrition-label">Fat</span>
-                    <span className="nutrition-value">{selectedMeal.totalFat}</span>
-                  </div>
+                  {Object.entries(selectedMeal.nutrition).map(([key, value]) => (
+                    <div key={key} className="nutrition-row">
+                      <span className="nutrition-label">
+                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                      </span>
+                      <span className="nutrition-value">
+                        {value.value} <span className="nutrition-percentage">* {value.percentage}%</span>
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            <button className="save-changes-btn" onClick={handleSaveMeal}>
-              Save Changes
-            </button>
+            <div className="modal-actions">
+              <button 
+                className="save-btn" 
+                onClick={handleSaveMeal}
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         </div>
       )}

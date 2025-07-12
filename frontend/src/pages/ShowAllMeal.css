@@ -6,7 +6,6 @@
   background-color: #f9f9f9;
 }
 
-/* Toggle button */
 .toggle-btn {
   position: fixed;
   top: 20px;
@@ -28,7 +27,6 @@
   background-color: #85b800;
 }
 
-/* Main content */
 .show-meal-content {
   margin-left: 270px;
   padding: 40px;
@@ -79,7 +77,6 @@
   background-color: #f0f0f0;
 }
 
-/* Meal container with white card background */
 .meal-container {
   width: 100%;
 }
@@ -109,7 +106,7 @@
   border: 2px dashed #ddd;
 }
 
-/* Meal cards */
+/* Meal Card Styles */
 .meal-card {
   background: white;
   border-radius: 12px;
@@ -128,45 +125,46 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-.meal-card img {
+.meal-card-image-container {
   width: 100%;
   height: 180px;
+  overflow: hidden;
+}
+
+.meal-card-image {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.meal-card:hover .meal-card-image {
+  transform: scale(1.05);
 }
 
 .meal-card-content {
   padding: 16px;
 }
 
-.meal-card h3 {
+.meal-card-title {
   margin: 0 0 8px 0;
   color: #333;
   font-size: 18px;
   font-weight: 600;
 }
 
-.meal-card .calories {
-  margin: 0 0 12px 0;
-  color: #666;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.meal-macros {
+.meal-card-macros {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
   color: #888;
 }
 
-.meal-macros span {
-  background: #f8f9fa;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-}
+.macro-protein { color: #99d209; }
+.macro-carbs { color: #3498db; }
+.macro-fat { color: #e74c3c; }
 
-/* Nutrition Modal */
+/* Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -182,15 +180,14 @@
 }
 
 .nutrition-modal {
-  background: #f0f0f0;
+  background: white;
   border-radius: 16px;
-  padding: 0;
+  padding: 24px;
   width: 90%;
-  max-width: 900px;
+  max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
 .close-btn {
@@ -217,42 +214,48 @@
 }
 
 .modal-header {
-  position: relative;
   margin-bottom: 24px;
+}
+
+.modal-title {
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
 }
 
 .modal-image {
   width: 100%;
   height: 200px;
   object-fit: cover;
-  border-radius: 16px 16px 0 0;
+  border-radius: 8px;
+  margin-bottom: 15px;
 }
 
-.modal-title {
-  position: absolute;
-  bottom: 16px;
-  left: 24px;
-  color: white;
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-}
-
-.modal-content {
+.modal-sections {
   display: flex;
   gap: 24px;
-  padding: 0 24px;
-  flex-wrap: wrap;
+  margin-top: 20px;
+  flex-direction: column;
 }
 
-/* Ingredients section */
+/* Ingredients Section */
 .ingredients-section {
   flex: 1;
-  min-width: 300px;
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
+}
+
+.ingredients-section.gray-bg {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.ingredients-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
 }
 
 .ingredients-section h3 {
@@ -262,57 +265,74 @@
   font-weight: 600;
 }
 
-.ingredients-list {
+.toggle-add-ingredient {
+  background: none;
+  border: none;
+  color: #99d209;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 5px 10px;
+  font-size: 14px;
+}
+
+.toggle-add-ingredient:hover {
+  text-decoration: underline;
+}
+
+.add-ingredient-form {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
-.ingredient-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px;
-  background: #f8f9fa;
-  border-radius: 8px;
+.ingredient-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
-.ingredient-image {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  object-fit: cover;
-}
-
-.add-more-btn {
+.add-ingredient-btn {
   background-color: #99d209;
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 8px 15px;
+  border-radius: 4px;
   cursor: pointer;
-  width: 100%;
-  transition: background-color 0.3s ease;
+  font-size: 14px;
+  transition: background-color 0.3s;
 }
 
-.add-more-btn:hover {
+.add-ingredient-btn:hover {
   background-color: #85b800;
 }
 
-/* Nutrition section */
+.ingredients-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ingredient-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+/* Nutrition Section */
 .nutrition-section {
   flex: 1;
-  min-width: 300px;
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
+}
+
+.nutrition-section.gray-bg {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 15px;
 }
 
 .nutrition-section h3 {
-  margin: 0 0 20px 0;
+  margin: 0 0 16px 0;
   color: #333;
   font-size: 18px;
   font-weight: 600;
@@ -321,155 +341,106 @@
 .nutrition-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 12px;
 }
 
-.nutrition-item {
-  display: grid;
-  grid-template-columns: 1fr auto 2fr auto;
-  align-items: center;
-  gap: 12px;
+.nutrition-row {
+  display: flex;
+  justify-content: space-between;
   padding: 8px 0;
+  border-bottom: 1px solid #eee;
 }
 
 .nutrition-label {
-  font-size: 14px;
-  color: #666;
   font-weight: 500;
+  color: #333;
+  font-size: 14px;
 }
 
 .nutrition-value {
-  font-size: 14px;
-  color: #333;
-  font-weight: 600;
-  text-align: right;
-}
-
-.nutrition-bar {
-  height: 8px;
-  background: #e9ecef;
-  border-radius: 4px;
-  overflow: hidden;
-  position: relative;
-}
-
-.nutrition-fill {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.nutrition-percent {
-  font-size: 12px;
   color: #666;
+  font-size: 14px;
+}
+
+.nutrition-percentage {
+  color: #99d209;
+  font-size: 0.8em;
+  margin-left: 5px;
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+  gap: 16px;
+}
+
+.more-btn, .save-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
   font-weight: 600;
-  text-align: right;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  flex: 1;
 }
 
 .more-btn {
-  background: transparent;
+  background: white;
   border: 2px solid #99d209;
   color: #99d209;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  width: 100%;
-  transition: all 0.3s ease;
 }
 
 .more-btn:hover {
+  background: #f0f8e0;
+}
+
+.save-btn {
   background: #99d209;
   color: white;
-}
-
-/* Save button */
-.save-changes-btn {
-  background-color: #99d209;
-  color: white;
   border: none;
-  padding: 16px 32px;
-  border-radius: 0 0 16px 16px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  width: 100%;
-  transition: background-color 0.3s ease;
 }
 
-.save-changes-btn:hover {
-  background-color: #85b800;
+.save-btn:hover {
+  background: #85b800;
 }
 
-/* Responsive design */
-@media (max-width: 1200px) {
-  .modal-content {
-    flex-direction: column;
-  }
-  
-  .ingredients-section,
-  .nutrition-section {
-    min-width: auto;
-  }
+.save-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
   .show-meal-content {
     margin-left: 0;
     padding: 20px;
   }
-  
-  .sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
+
+  .top-controls {
+    margin-top: 60px;
   }
-  
-  .sidebar.visible {
-    transform: translateX(0);
-  }
-  
+
   .meal-list {
     grid-template-columns: 1fr;
   }
-  
-  .nutrition-modal {
-    width: 95%;
-    margin: 20px;
-  }
-  
-  .nutrition-item {
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
-    gap: 8px;
-  }
-  
-  .nutrition-bar {
-    grid-column: 1 / -1;
-  }
-  
-  .nutrition-percent {
-    grid-column: 2;
-    grid-row: 1;
+
+  .modal-sections {
+    flex-direction: column;
   }
 }
 
 @media (max-width: 480px) {
-  .top-controls {
-    margin-top: 60px;
+  .modal-actions {
+    flex-direction: column;
   }
-  
-  .meal-list-card {
-    padding: 20px;
+
+  .more-btn, .save-btn {
+    width: 100%;
   }
-  
-  .modal-content {
-    padding: 0 16px;
-  }
-  
-  .ingredients-section,
-  .nutrition-section {
-    padding: 16px;
+
+  .add-ingredient-form {
+    flex-direction: column;
   }
 }
