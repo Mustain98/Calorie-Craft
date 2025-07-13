@@ -77,7 +77,6 @@ export default function ProfilePage() {
       {userData && (
         <Sidebar
           visible={sidebarVisible}
-          onLogout={handleLogout}
           userData={userData}
         />
       )}
