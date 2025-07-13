@@ -386,7 +386,7 @@
 }
 
 /* Save button */
-.save-changes-btn {
+.save-to-my-meals-btn {
   background-color: #99d209;
   color: white;
   border: none;
@@ -472,4 +472,29 @@
   .nutrition-section {
     padding: 16px;
   }
+}
+/* Delete button */
+.delete-meal-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 0 0 16px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.delete-meal-btn:hover {
+  background-color: #c0392b;
+}
+
+/* Fix image sizing */
+.meal-card img {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  display: block;
 }

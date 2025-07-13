@@ -10,10 +10,14 @@ const getAllFoodItems = async (req, res) => {
   }
 };
 
-// Get a food item by its name
+// Get a food item by its name (case‑insensitive exact match)
 const getFoodItemByName = async (req, res) => {
   try {
-    const item = await foodItem.findOne({ name: req.params.name.trim() });
+    // Build a regex for an exact, case‑insensitive match
+    const nameParam = req.params.name.trim();
+    const regex = new RegExp(`^${nameParam}$`, 'i');
+
+    const item = await foodItem.findOne({ name: regex });
 
     if (!item) {
       return res.status(404).json({ error: 'Food item not found' });
@@ -24,7 +28,6 @@ const getFoodItemByName = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
-
 
 // Delete a food item by ID
 const deleteFoodItem = async (req, res) => {
@@ -59,9 +62,29 @@ const createFoodItem = async (req, res) => {
   }
 };
 
+// Fuzzy search for food items by partial name (case-insensitive)
+const searchFoodItems = async (req, res) => {
+  try {
+    const query = req.query.q;
+    if (!query || query.trim() === '') {
+      return res.status(400).json({ error: 'Missing search query' });
+    }
+
+    const regex = new RegExp(query.trim(), 'i'); // case-insensitive partial match
+
+    const items = await foodItem.find({ name: regex }).limit(10).sort({ name: 1 });
+
+    res.status(200).json(items);
+  } catch (err) {
+    res.status(500).json({ error: 'Search failed' });
+  }
+};
+
+
 module.exports = {
   getAllFoodItems,
   getFoodItemByName,
   deleteFoodItem,
-  createFoodItem
+  createFoodItem,
+  searchFoodItems
 };

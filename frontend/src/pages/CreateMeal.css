@@ -1,3 +1,29 @@
+/* File input styling */
+.form-group input[type="file"] {
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+  background: #fafafa;
+  cursor: pointer;
+}
+
+.form-group input[type="file"]::-webkit-file-upload-button {
+  background: #99d209;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.form-group input[type="file"]::-webkit-file-upload-button:hover {
+  background-color: #85b800;
+}
+
+/* Layout */
 .create-meal-page {
   display: flex;
   font-family: 'Segoe UI', sans-serif;
@@ -53,8 +79,10 @@
   margin-bottom: 20px;
 }
 
+/* Form fields */
 .form-group {
   margin-bottom: 20px;
+  position: relative;
 }
 
 .form-group label {
@@ -79,6 +107,7 @@
   resize: vertical;
 }
 
+/* Ingredients */
 .ingredient-input {
   display: flex;
   align-items: center;
@@ -90,6 +119,19 @@
   margin-right: 8px;
 }
 
+/* Selected ingredient entry */
+.sel-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.sel-item input {
+  width: 60px;
+}
+
+/* Buttons */
 .remove-btn {
   background: #ff4444;
   color: white;
@@ -115,6 +157,43 @@
   margin-top: 8px;
 }
 
+.btn-group {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.save-btn, .share-btn {
+  flex: 1;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.save-btn {
+  background-color: #00C851;
+  color: white;
+}
+
+.save-btn:hover {
+  background-color: #009E42;
+}
+
+.share-btn {
+  background-color: #33b5e5;
+  color: white;
+}
+
+.share-btn:hover {
+  background-color: #0aaadf;
+}
+
+/* Nutrition summary */
 .nutrition-section {
   margin: 30px 0;
   padding-top: 20px;
@@ -146,6 +225,7 @@
   border-radius: 6px;
 }
 
+/* Submit button */
 .submit-btn {
   background: #99d209;
   color: white;
@@ -164,6 +244,7 @@
   background: #85b800;
 }
 
+/* Error/Success */
 .error-text {
   color: #ff4444;
   margin-bottom: 20px;
@@ -174,12 +255,40 @@
   margin-bottom: 20px;
 }
 
+/* Suggestion box */
+.suggestions {
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  margin-top: 4px;
+  background: #fff;
+  position: absolute;
+  width: calc(100% - 20px);
+  list-style: none;
+  padding: 0;
+  z-index: 10;
+}
+
+.suggestions li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.suggestions li:hover {
+  background-color: #eee;
+}
+
+.selected-items {
+  margin: 1rem 0;
+}
+
+/* Mobile */
 @media (max-width: 768px) {
   .create-meal-content {
     margin-left: 0;
     padding: 20px;
   }
-  
+
   .nutrition-grid {
     grid-template-columns: 1fr;
   }
