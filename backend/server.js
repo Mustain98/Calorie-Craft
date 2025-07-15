@@ -27,6 +27,7 @@ app.use('/api/dayPlan',dayPlanRoute);
 app.use('/api/weekPlan',weekPlanRoute);
 app.use('/api/users',userRoute);
 
+
 // Connect to MongoDB and then start server
 mongoose.connect(process.env.MONGO_URI)
 .then(() => {

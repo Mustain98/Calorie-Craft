@@ -40,11 +40,6 @@ export default function NutritionalRequirement() {
     fetchUser();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/signin');
-  };
-
   const toggleSidebar = () => setSidebarVisible(v => !v);
 
   const handleSetDefault = async () => {
@@ -95,7 +90,6 @@ export default function NutritionalRequirement() {
       {userData && (
         <Sidebar
           visible={sidebarVisible}
-          onLogout={handleLogout}
           userData={userData}
         />
       )}
