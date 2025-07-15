@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import './ChangePassword.css';
-import logo from '../logo.png'; // Update path if needed
+import logo from '../logo.png';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export default function ChangePasswordPage() {
   const [formData, setFormData] = useState({
@@ -10,25 +12,47 @@ export default function ChangePasswordPage() {
   });
 
   const [error, setError] = useState('');
+  const navigate = useNavigate(); 
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 🔒 Simple frontend validation
     if (formData.newPassword !== formData.confirmPassword) {
       setError('New and confirm passwords do not match.');
       return;
     }
 
-    setError('');
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('You are not logged in.');
+        navigate('/login');
+        return;
+      }
 
-    // ✅ TODO: Send data to backend
-    console.log('Submitting:', formData);
-    alert('Password change submitted (backend not connected yet)');
+      const response = await axios.put(
+        'http://localhost:4000/api/users/me/password',
+        {
+          currentPassword: formData.oldPassword,
+          newPassword: formData.newPassword,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      alert(response.data.message || 'Password updated successfully!');
+      setFormData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      setError('');
+      navigate('/login')
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Failed to update password';
+      setError(msg);
+    }
   };
 
   return (
