@@ -8,8 +8,9 @@ import ProfilePage from './pages/Profile';
 import ChangePasswordPage from './pages/ChangePassword';
 import ShowAllMeal from './pages/ShowAllMeal';
 import NutritionalRequirement from './pages/NutritionalRequirement';
-import MealPlan from './pages/MealPlan'; // ✅ Import the real MealPlan component
-import GoalSetting from './pages/GoalSetting'; // Optional: replace if you later create this
+import MealPlan from './pages/MealPlan';
+import GoalSetting from './pages/GoalSetting';
+import CreateMeal from './pages/CreateMeal';
 
 function App() {
   return (
@@ -21,9 +22,10 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/changepassword" element={<ChangePasswordPage />} />
         <Route path="/showmeal" element={<ShowAllMeal />} />
+        <Route path="/createmeal" element={<CreateMeal />} />
         <Route path="/mealplan" element={<MealPlan />} />
         <Route path="/nutrition" element={<NutritionalRequirement />} />
-        <Route path="/goal" element={<GoalSetting />} /> {/* You can keep this or replace later */}
+        <Route path="/goal" element={<GoalSetting />} />
       </Routes>
     </Router>
   );

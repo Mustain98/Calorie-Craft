@@ -12,75 +12,122 @@ export default function ShowAllMeal() {
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'my'
   const [allMeals, setAllMeals] = useState([]);
   const [userData, setUserData] = useState(null);
+  const [userMeals, setUserMeals] = useState([]);
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [showNutritionModal, setShowNutritionModal] = useState(false);
 
   useEffect(() => {
-    // 1) Fetch all system meals
-    axios
-      .get('http://localhost:4000/api/meal')
-      .then(res => setAllMeals(res.data))
-      .catch(err => console.error('Failed to load meals:', err));
-
-    // 2) Fetch current user for the sidebar
-    const token = localStorage.getItem('token');
-    if (!token) {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    navigate('/signin');
+    return;
+  }
+  axios
+    .get('http://localhost:4000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then(res => setUserData(res.data))
+    .catch(() => {
+      localStorage.removeItem('token');
       navigate('/signin');
-      return;
-    }
-    axios
-      .get('http://localhost:4000/api/users/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then(res => setUserData(res.data))
-      .catch(() => {
-        localStorage.removeItem('token');
-        navigate('/signin');
-      });
-  }, [navigate]);
+    });
+  // 1. Fetch all public/shared meals
+  axios
+    .get('http://localhost:4000/api/meal')
+    .then(res => setAllMeals(res.data))
+    .catch(err => console.error('Failed to load meals:', err));
+
+  // 2. Fetch current user meals (only myMeals)
+  axios
+    .get('http://localhost:4000/api/users/me/myMeals', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then(res => {
+      setUserMeals(res.data || []);
+    })
+    .catch(err => {
+      console.error('Failed to load user meals:', err);
+      localStorage.removeItem('token');
+      navigate('/signin');
+    });
+}, [navigate]);
+
 
   const toggleSidebar = () => setSidebarVisible(v => !v);
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/signin');
-  };
 
-  // "My Food" tab is empty until you wire up user-specific meals
-  const userMeals = [];
   const filteredMeals = activeTab === 'my' ? userMeals : allMeals;
 
   const handleMealClick = meal => {
-    if (activeTab === 'all') {
-      setSelectedMeal(meal);
-      setShowNutritionModal(true);
-    }
+    setSelectedMeal(meal);
+    setShowNutritionModal(true);
   };
+
   const closeNutritionModal = () => {
     setShowNutritionModal(false);
     setSelectedMeal(null);
   };
-  const handleSaveMeal = () => {
-    // TODO: POST to backend to save meal under the user
-    console.log('Saving meal:', selectedMeal);
-    closeNutritionModal();
+
+
+  const handleDeleteMeal = async (mealId) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.delete(`http://localhost:4000/api/users/me/myMeals/${mealId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUserMeals(prev => prev.filter(meal => meal._id !== mealId));
+      closeNutritionModal();
+    } catch (err) {
+      console.error('Failed to delete meal:', err);
+    }
   };
+
+  // Add this function inside your component:
+
+const handleSaveToMyMeals = async (meal) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    navigate('/signin');
+    return;
+  }
+
+  try {
+    const payload = {
+      name: meal.name,
+      imageUrl: meal.imageUrl || meal.image || '',
+      foodItems: meal.foodItems.map(item => ({
+        food: typeof item.food === 'object' ? item.food._id : item.food,
+        quantity: item.quantity
+      }))
+    };
+
+    const res = await axios.post('http://localhost:4000/api/users/me/myMeals', payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const newMeal = res.data.meal;
+    
+    // Update state with correct embedded meal (_id from user's myMeals)
+    setUserMeals(prev => [...prev, newMeal]);
+    setSelectedMeal(newMeal); // <-- this ensures correct _id is used for deletion
+    alert('Meal saved to My Meals!');
+  } catch (err) {
+    console.error('Failed to save meal:', err);
+    alert('Failed to save meal');
+  }
+};
+
+
 
   return (
     <div className="show-meal-page">
-      {/* Toggle Sidebar Button */}
       <button className="toggle-btn" onClick={toggleSidebar}>
         &#8942;
       </button>
 
-    {userData && (
-    <Sidebar
-    userData={userData}
-    onLogout={handleLogout}       // was handleLogout
-    visible={sidebarVisible}      // was sidebarVisible
-    />
-    )}
+      {userData && (
+        <Sidebar userData={userData} visible={sidebarVisible} />
+      )}
 
-      {/* Main Content */}
       <main className={`show-meal-content ${!sidebarVisible ? 'sidebar-hidden' : ''}`}>
         <div className="top-controls">
           <div className="meal-toggle">
@@ -110,7 +157,7 @@ export default function ShowAllMeal() {
                 filteredMeals.map(meal => (
                   <div
                     key={meal._id}
-                    className={`meal-card ${activeTab === 'all' ? 'clickable' : ''}`}
+                    className="meal-card clickable"
                     onClick={() => handleMealClick(meal)}
                   >
                     <img src={meal.imageUrl || meal.image} alt={meal.name} />
@@ -201,9 +248,17 @@ export default function ShowAllMeal() {
               </div>
             </div>
 
-            <button className="save-changes-btn" onClick={handleSaveMeal}>
-              Save Changes
+            {activeTab === 'all' && (
+            <button className="save-to-my-meals-btn" onClick={() => handleSaveToMyMeals(selectedMeal)}>
+              Save to My Meals
             </button>
+          )}
+
+            {activeTab === 'my' && (
+              <button className="delete-meal-btn" onClick={() => handleDeleteMeal(selectedMeal._id)}>
+                Delete from My Meals
+              </button>
+            )}
           </div>
         </div>
       )}

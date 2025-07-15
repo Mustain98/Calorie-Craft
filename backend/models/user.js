@@ -1,18 +1,15 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const calculateMealMacros = require('../utils/calculateMealMacros');
 
-// Nutrition calculation helper
 function calculateNutrition({ gender, age, weight, height, activityLevel }) {
-  let bmr = gender === 'male'
+  const bmr = gender === 'male'
     ? 10 * weight + 6.25 * height - 5 * age + 5
     : 10 * weight + 6.25 * height - 5 * age - 161;
 
   const multiplier = {
-    sedentary: 1.2,
-    light: 1.375,
-    moderate: 1.55,
-    active: 1.725,
-    'very active': 1.9
+    sedentary: 1.2, light: 1.375, moderate: 1.55,
+    active: 1.725, 'very active': 1.9
   };
 
   const tdee = bmr * (multiplier[activityLevel] || 1.2);
@@ -24,6 +21,30 @@ function calculateNutrition({ gender, age, weight, height, activityLevel }) {
   return { calories, protein, carbs, fats };
 }
 
+const EmbeddedMealSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true },
+  imageUrl: { type: String, default: '', trim: true },
+  foodItems: [
+    {
+      food: { type: mongoose.Schema.Types.ObjectId, ref: 'fooditem', required: true },
+      quantity: { type: Number, default: 1, min: 0.1 }
+    }
+  ],
+  totalCalories: { type: Number, default: 0 },
+  totalProtein:  { type: Number, default: 0 },
+  totalCarbs:    { type: Number, default: 0 },
+  totalFat:      { type: Number, default: 0 }
+});
+
+EmbeddedMealSchema.pre('save', async function (next) {
+  const macros = await calculateMealMacros(this.foodItems);
+  this.totalCalories = macros.totalCalories;
+  this.totalProtein  = macros.totalProtein;
+  this.totalCarbs    = macros.totalCarbs;
+  this.totalFat      = macros.totalFat;
+  next();
+});
+
 const UserSchema = new mongoose.Schema({
   name: String,
   email: { type: String, required: true, unique: true },
@@ -32,10 +53,7 @@ const UserSchema = new mongoose.Schema({
   gender: { type: String, enum: ['male', 'female'] },
   weight: Number,
   height: Number,
-  activityLevel: {
-    type: String,
-    enum: ['sedentary', 'light', 'moderate', 'active', 'very active']
-  },
+  activityLevel: { type: String, enum: ['sedentary', 'light', 'moderate', 'active', 'very active'] },
   manualNutrition: { type: Boolean, default: false },
   nutritionalRequirement: {
     calories: Number,
@@ -43,24 +61,17 @@ const UserSchema = new mongoose.Schema({
     carbs: Number,
     fats: Number
   },
-    myMeals: [ 
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'meal'
-    }
-  ],
+  myMeals: [EmbeddedMealSchema],
   weekPlan: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'weekPlan'
   }
 }, { timestamps: true });
 
-// Password hash
 UserSchema.pre('save', async function (next) {
   if (this.isModified('password'))
     this.password = await bcrypt.hash(this.password, 10);
 
-  // Only auto-calculate if not manual
   if (!this.manualNutrition || !this.nutritionalRequirement) {
     this.nutritionalRequirement = calculateNutrition(this);
     this.manualNutrition = false;
@@ -69,12 +80,10 @@ UserSchema.pre('save', async function (next) {
   next();
 });
 
-// Password comparison
 UserSchema.methods.matchPassword = function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);
 };
 
-// Export with nutrition calculator
 UserSchema.statics.calculateNutrition = calculateNutrition;
 
 module.exports = mongoose.model('user', UserSchema);
