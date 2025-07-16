@@ -188,6 +188,23 @@ const showMeals = async (req, res) => {
   }
 };
 
+//update password
+
+const updatePassword =async (req,res) =>{
+  try{
+    const user = await User.findById(req.user.id).select('+password');
+    const {currentPassword,newPassword}=req.body;
+    const isMatch = await user.matchPassword(currentPassword);
+    if(!isMatch)return res.status(401).json({error: 'Current Password is incorrect'});
+    user.password=newPassword;
+    await user.save();
+    return res.status(200).json({message:'Password updated successfully'});
+
+  }catch(err){
+    console.error('Password update error:', err);
+    res.status(500).json({ error: 'Failed to update password' });
+  }
+};
 
 module.exports = {
   registerUser,
@@ -196,5 +213,6 @@ module.exports = {
   updateUser,
   addMealToMyMeals,
   deleteMealFromMyMeals,
-  showMeals
+  showMeals,
+  updatePassword
 };
