@@ -27,7 +27,6 @@ export default function Sidebar({
         <h2>Calorie Craft</h2>
       </div>
 
-    
       <img
           src={avatar || 'https://randomuser.me/api/portraits/lego/1.jpg'}
           alt={name}
@@ -35,7 +34,6 @@ export default function Sidebar({
       <h4>Hello, {name}</h4>
       <p>{email}</p>
       
-
       <nav className="sidebar-menu">
         <button onClick={() => navigate('/profile')}>Profile</button>
         <button onClick={() => navigate('/showmeal')}>Show All Meal</button>
