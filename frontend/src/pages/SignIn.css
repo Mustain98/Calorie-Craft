@@ -4,29 +4,6 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
-/* Left green side */
-.signin-left {
-  width: 40%;
-  background-color: #99d209;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.signin-logo {
-  width: 100px;
-  height: 100px;
-  margin-bottom: 20px;
-}
-
-.signin-title {
-  font-size: 36px;
-  font-weight: bold;
-  text-align: center;
-}
-
 /* Right form area */
 .signin-right {
   width: 60%;
