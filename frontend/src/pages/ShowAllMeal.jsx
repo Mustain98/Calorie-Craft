@@ -135,13 +135,21 @@ const handleSaveToMyMeals = async (meal) => {
               className={activeTab === 'my' ? 'active' : 'inactive'}
               onClick={() => setActiveTab('my')}
             >
+<<<<<<< HEAD
               My Food
+=======
+              My Collection
+>>>>>>> 2672b9a82cac937c216008e8f790e678d4b87372
             </button>
             <button
               className={activeTab === 'all' ? 'active' : 'inactive'}
               onClick={() => setActiveTab('all')}
             >
+<<<<<<< HEAD
               All Meals
+=======
+              Meal Collection
+>>>>>>> 2672b9a82cac937c216008e8f790e678d4b87372
             </button>
           </div>
         </div>
