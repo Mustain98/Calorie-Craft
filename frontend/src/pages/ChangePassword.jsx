@@ -58,7 +58,7 @@ export default function ChangePasswordPage() {
   return (
     <div className="password-page">
 
-      <LeftSection/>
+      <LeftSection />
 
       <div className="password-right">
         <form className="password-form" onSubmit={handleSubmit}>

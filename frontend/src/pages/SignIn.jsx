@@ -45,7 +45,7 @@ export default function SigninPage() {
   return (
     <div className="signin-page">
 
-      <LeftSection/>
+      <LeftSection />
       
       <div className="signin-right">
         <form className="signin-form" onSubmit={handleSubmit}>

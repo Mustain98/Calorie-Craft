@@ -66,7 +66,7 @@ export default function SignupPage() {
   return (
     <div className="signup-page">
 
-      <LeftSection/>
+      <LeftSection />
 
       <div className="signup-right">
         <form className="signup-form" onSubmit={handleSubmit}>
