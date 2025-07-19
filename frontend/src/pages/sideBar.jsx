@@ -27,15 +27,14 @@ export default function Sidebar({
         <h2>Calorie Craft</h2>
       </div>
 
-      <div className="sidebar-user">
-        <img
+    
+      <img
           src={avatar || 'https://randomuser.me/api/portraits/lego/1.jpg'}
           alt={name}
-          className="user-avatar"
-        />
-        <h4>Hello, {name}</h4>
-        <p>{email}</p>
-      </div>
+          className="user-avatar"/>
+      <h4>Hello, {name}</h4>
+      <p>{email}</p>
+      
 
       <nav className="sidebar-menu">
         <button onClick={() => navigate('/profile')}>Profile</button>
@@ -44,13 +43,9 @@ export default function Sidebar({
         <button onClick={() => navigate('/mealplan')}>Meal Plan</button>
         <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
         <button onClick={() => navigate('/goal')}>Goal Setting</button>
+        <button onClick={handleLogout}>Log out</button>
       </nav>
 
-      <div className="logout-container">
-        <button className="logout-btn" onClick={handleLogout}>
-          Log out
-        </button>
-      </div>
     </aside>
   );
 }
