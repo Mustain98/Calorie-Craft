@@ -23,7 +23,9 @@ function calculateNutrition({ gender, age, weight, height, activityLevel }) {
 
 const EmbeddedMealSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
+  description:{type: String, default: ''},
   imageUrl: { type: String, default: '', trim: true },
+  imageId: {type: String, default:null},
   foodItems: [
     {
       food: { type: mongoose.Schema.Types.ObjectId, ref: 'fooditem', required: true },
