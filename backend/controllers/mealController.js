@@ -3,21 +3,9 @@ const Meal = require('../models/meal');
 // @desc    Create a new meal
 const createMeal = async (req, res) => {
   try {
-    const { name } = req.body;
-    let foodItems = req.body.foodItems;
+    const { name, imageUrl, foodItems } = req.body;
 
-    // Parse foodItems if it's a string (multipart/form-data case)
-    if (typeof foodItems === 'string') {
-      try {
-        foodItems = JSON.parse(foodItems);
-      } catch (err) {
-        return res.status(400).json({ error: 'Invalid JSON format for foodItems' });
-      }
-    }
-
-    const imageUrl = req.file?.path || '';
-
-    if (!name || !Array.isArray(foodItems) || foodItems.length === 0) {
+    if (!name || !foodItems || !Array.isArray(foodItems) || foodItems.length === 0) {
       return res.status(400).json({ error: 'Invalid meal data' });
     }
 
@@ -33,7 +21,6 @@ const createMeal = async (req, res) => {
     res.status(500).json({ error: 'Failed to create meal', details: err.message });
   }
 };
-
 
 // @desc    Update an existing meal
 const updateMeal = async (req, res) => {

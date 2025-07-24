@@ -150,7 +150,7 @@ export default function CreateMeal() {
             </div>
 
             <div className="form-group" style={{ position: 'relative' }}>
-              <label>Search Food Item</label>
+              <label>Search Ingredient</label>
               <input
                 type="text"
                 value={searchQuery}
