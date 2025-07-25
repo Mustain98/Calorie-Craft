@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const calculateMealMacros=require('../utils/calculateMealMacros');
 const Meal = require('../models/meal');         
 const FoodItem = require('../models/foodItem'); 
+const {cloudinary}=require('../utils/cloudinary');
 // Generate JWT
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -87,7 +88,7 @@ const updateUser = async (req, res) => {
 const addMealToMyMeals = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, foodItems, share = false } = req.body;
+    const { name,description,foodItems, share = false } = req.body;
 
     let parsedItems = typeof foodItems === 'string' ? JSON.parse(foodItems) : foodItems;
 
@@ -103,7 +104,7 @@ const addMealToMyMeals = async (req, res) => {
 
     // Accept imageUrl from req.body (not just req.file)
     const imageUrl = req.body.imageUrl || req.file?.path || '';
-
+    const imageId = req.file?.filename||'';
     // Embed food names inside items (you can skip if you just store IDs)
     const populatedItems = parsedItems.map(item => ({
       food: item.food,
@@ -115,7 +116,9 @@ const addMealToMyMeals = async (req, res) => {
 
     const newEmbeddedMeal = {
       name,
+      description,
       imageUrl,
+      imageId,
       foodItems: populatedItems,
       ...totals
     };
@@ -128,16 +131,6 @@ const addMealToMyMeals = async (req, res) => {
     // Populate food names in embedded meal before returning
     await user.populate('myMeals.foodItems.food', 'name');
     const savedMeal = user.myMeals[user.myMeals.length - 1];
-
-    // Optional: Also save to global collection if shared
-    if (share === true || share === 'true') {
-      const sharedMeal = new Meal({
-        name,
-        imageUrl,
-        foodItems: parsedItems
-      });
-      await sharedMeal.save();
-    }
 
     res.status(201).json({ message: 'Meal saved to your profile', meal: savedMeal });
 
@@ -157,20 +150,30 @@ const deleteMealFromMyMeals = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const beforeCount = user.myMeals.length;
-    user.myMeals = user.myMeals.filter(meal => meal._id.toString() !== mealId);
-
-    if (user.myMeals.length === beforeCount) {
+    // ✅ Find the meal before modifying the array
+    const mealToDelete = user.myMeals.find(meal => meal._id.toString() === mealId);
+    if (!mealToDelete) {
       return res.status(404).json({ error: 'Meal not found in your meals' });
     }
 
+    // ✅ Delete the Cloudinary image
+    if (mealToDelete.imageId) {
+      const result = await cloudinary.uploader.destroy(mealToDelete.imageId);
+      console.log('Cloudinary destroy result:', result);
+    }
+
+    // ✅ Remove the meal from the array
+    user.myMeals = user.myMeals.filter(meal => meal._id.toString() !== mealId);
     await user.save();
+
     res.json({ message: 'Meal deleted from your meals' });
+
   } catch (err) {
     console.error('Failed to delete meal:', err);
     res.status(500).json({ error: 'Server error: failed to delete meal' });
   }
 };
+
 
 // Show user's meals
 const showMeals = async (req, res) => {
