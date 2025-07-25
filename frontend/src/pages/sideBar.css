@@ -12,28 +12,16 @@
   padding: 20px;
   z-index: 100;
   transition: transform 0.3s ease;
+  align-items: center;
 }
 
 .sidebar.hidden {
   transform: translateX(-100%);
 }
 
-/* Sidebar Header (Logo + Title) */
-.sidebar-header {
-  text-align: center;
-  margin-bottom: 15px;
-  color: #99d209;
-}
-
 .sidebar-logo {
   width: 50px;
   height: 50px;
-}
-
-/* User Section */
-.sidebar-user {
-  text-align: center;
-  margin-bottom: 15px;
 }
 
 .user-avatar {
@@ -43,18 +31,15 @@
   margin-bottom: 10px;
 }
 
-/* Sidebar Content (Navigation + Logout) */
-.sidebar-content {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
 .sidebar-menu {
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 4px;
   margin-bottom: 10px;
+  width: 100%;
+  
 }
 
 .sidebar-menu button {
@@ -62,11 +47,10 @@
   border: none;
   background-color: white;
   border-left: 5px solid transparent;
-  text-align: left;
   cursor: pointer;
   transition: 0.3s;
   font-size: 15px;
-}
+  }
 
 .sidebar-menu button:hover,
 .sidebar-menu .active {
@@ -74,26 +58,3 @@
   border-left: 5px solid #99d209;
 }
 
-/* Logout Button */
-.logout-container {
-  margin-top: 5px;
-  padding-top: 5px;
-  border-top: 1px solid #e0e0e0;
-}
-
-.logout-btn {
-  width: 100%;
-  padding: 10px;
-  border: none;
-  background-color: white;
-  border-left: 5px solid transparent;
-  text-align: left;
-  cursor: pointer;
-  transition: 0.3s;
-  font-size: 15px;
-}
-
-.logout-btn:hover {
-  background-color: #e0f3c2;
-  border-left: 5px solid #99d209;
-}

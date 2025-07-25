@@ -1,15 +1,28 @@
 const mongoose = require('mongoose');
-const calculateMealMacros = require('../utils/calculateMealMacros');
 
 const MealSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  description:{type: String, default: ''},
-  imageUrl: { type: String, default: '', trim: true },
-  imageId: {type: String,default: null},
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  imageUrl: {
+    type: String,
+    default: '',
+    trim: true
+  },
   foodItems: [
     {
-      food: { type: mongoose.Schema.Types.ObjectId, ref: 'fooditem', required: true },
-      quantity: { type: Number, default: 1, min: 0.1 }
+      food: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'fooditem',
+        required: true
+      },
+      quantity: {
+        type: Number,
+        default: 1,
+        min: 0.1
+      }
     }
   ],
   totalCalories: { type: Number, default: 0 },
@@ -19,11 +32,30 @@ const MealSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 MealSchema.pre('save', async function (next) {
-  const macros = await calculateMealMacros(this.foodItems);
-  this.totalCalories = macros.totalCalories;
-  this.totalProtein  = macros.totalProtein;
-  this.totalCarbs    = macros.totalCarbs;
-  this.totalFat      = macros.totalFat;
+  const meal = this;
+
+  let totalCalories = 0;
+  let totalProtein = 0;
+  let totalCarbs = 0;
+  let totalFat = 0;
+
+  for (const item of meal.foodItems) {
+    const food = await mongoose.model('fooditem').findById(item.food);
+    if (!food) continue;
+
+    const qty = item.quantity || 1;
+
+    totalCalories += food.calories * qty;
+    totalProtein  += food.protein  * qty;
+    totalCarbs    += food.carbs    * qty;
+    totalFat      += food.fat      * qty;
+  }
+
+  meal.totalCalories = totalCalories;
+  meal.totalProtein  = totalProtein;
+  meal.totalCarbs    = totalCarbs;
+  meal.totalFat      = totalFat;
+
   next();
 });
 

@@ -3,25 +3,21 @@ const {cloudinary}=require('../utils/cloudinary');
 
 // @desc    Create a new meal
 const createMeal = async (req, res) => {
-  const imageUrl = req.file?.path || '';
-  const imageId = req.file?.filename || ''; // filename is the public_id
-
   try {
-    const { name, description } = req.body;
-    let foodItems = req.body.foodItems;
+    const { name, imageUrl, foodItems } = req.body;
 
+    // Parse foodItems if it's a string (multipart/form-data case)
     if (typeof foodItems === 'string') {
       try {
         foodItems = JSON.parse(foodItems);
       } catch (err) {
-        // Delete uploaded image before returning error
-        if (imageId) await cloudinary.uploader.destroy(imageId);
         return res.status(400).json({ error: 'Invalid JSON format for foodItems' });
       }
     }
 
-    if (!name || !Array.isArray(foodItems) || foodItems.length === 0) {
-      if (imageId) await cloudinary.uploader.destroy(imageId);
+    const imageUrl = req.file?.path || '';
+
+    if (!name || !foodItems || !Array.isArray(foodItems) || foodItems.length === 0) {
       return res.status(400).json({ error: 'Invalid meal data' });
     }
 
@@ -41,8 +37,6 @@ const createMeal = async (req, res) => {
     res.status(500).json({ error: 'Failed to create meal', details: err.message });
   }
 };
-
-
 
 // @desc    Update an existing meal
 const updateMeal = async (req, res) => {
