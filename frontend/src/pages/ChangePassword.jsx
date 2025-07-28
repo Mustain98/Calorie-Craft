@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './ChangePassword.css';
-import logo from '../logo.png';
+import LeftSection from './LeftSection';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -57,10 +57,8 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="password-page">
-      <div className="password-left">
-        <img src={logo} alt="Calorie Craft Logo" className="password-logo" />
-        <h1 className="password-title">Calorie Craft</h1>
-      </div>
+
+      <LeftSection />
 
       <div className="password-right">
         <form className="password-form" onSubmit={handleSubmit}>

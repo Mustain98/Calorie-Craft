@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './SignIn.css';
-import logo from '../logo.png';
+import LeftSection from './LeftSection';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -44,11 +44,9 @@ export default function SigninPage() {
 
   return (
     <div className="signin-page">
-      <div className="signin-left">
-        <img src={logo} alt="Calorie Craft Logo" className="signin-logo" />
-        <h1 className="signin-title">Calorie Craft</h1>
-      </div>
 
+      <LeftSection />
+      
       <div className="signin-right">
         <form className="signin-form" onSubmit={handleSubmit}>
           <h2><span className="green-text">Welcome</span> Back!</h2>
