@@ -7,7 +7,8 @@ const {
   addMealToMyMeals,
   deleteMealFromMyMeals,
   showMeals,
-  updatePassword
+  updatePassword,
+  shareMeal
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const {parser} =require('../utils/cloudinary');
@@ -21,4 +22,5 @@ router.post('/me/myMeals',protect,parser.single('image'),addMealToMyMeals);
 router.delete('/me/myMeals/:id',protect,deleteMealFromMyMeals);
 router.get('/me/myMeals/',protect,showMeals);
 router.put('/me/password',protect,updatePassword);
+router.post('/me/shareMeal/:id',protect,shareMeal);
 module.exports = router;
