@@ -3,19 +3,19 @@ const express = require('express');
 const cors=require('cors');
 const mongoose = require('mongoose');
 //routes
-const foodItemRoute = require('./routes/fooditem.js');
-const mealRoute=require('./routes/meal.js');
-const timedMealRoute=require('./routes/timedMeal.js');
-const dayPlanRoute=require('./routes/dayPlan.js');
-const weekPlanRoute=require('./routes/weekPlan.js');
-const userRoute=require('./routes/user.js');
+const foodItemRoute = require('./routes/fooditem');
+const mealRoute=require('./routes/meal');
+const timedMealRoute=require('./routes/timedMeal');
+const dayPlanRoute=require('./routes/dayPlan');
+const weekPlanRoute=require('./routes/weekPlan');
+const userRoute=require('./routes/user');
 
 const app = express();
 const PORT = process.env.PORT;
 
 // Middleware
 app.use(express.json());
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({ origin: ['http://localhost:3000','http://localhost:3002'] }));
 app.use(express.urlencoded({ extended: true }));
 
 

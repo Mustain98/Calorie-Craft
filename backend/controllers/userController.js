@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const calculateMealMacros=require('../utils/calculateMealMacros');
 const Meal = require('../models/meal');         
 const FoodItem = require('../models/foodItem'); 
+const pendingMeal=require('../models/pendingMeal');
 const {cloudinary}=require('../utils/cloudinary');
 // Generate JWT
 const generateToken = (userId) => {
@@ -88,7 +89,7 @@ const updateUser = async (req, res) => {
 const addMealToMyMeals = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name,description,foodItems, share = false } = req.body;
+    const { name,description,foodItems,share } = req.body;
 
     let parsedItems = typeof foodItems === 'string' ? JSON.parse(foodItems) : foodItems;
 
@@ -130,7 +131,11 @@ const addMealToMyMeals = async (req, res) => {
 
     // Populate food names in embedded meal before returning
     await user.populate('myMeals.foodItems.food', 'name');
+
     const savedMeal = user.myMeals[user.myMeals.length - 1];
+    if (share) {
+      await addToPendingMeals(savedMeal._id, userId);
+    }
 
     res.status(201).json({ message: 'Meal saved to your profile', meal: savedMeal });
 
@@ -209,6 +214,59 @@ const updatePassword =async (req,res) =>{
   }
 };
 
+
+// Share a personal meal by creating a PendingMeal
+// Controller to share a meal
+const shareMeal = async (req, res) => {
+  try {
+    const { mealId } = req.params;
+    const userId = req.user._id;
+
+    const result = await addToPendingMeals(mealId, userId);
+    if (result.success) {
+      return res.status(201).json({
+        message: 'Meal shared successfully as pending meal',
+        pendingMeal: result.pendingMeal
+      });
+    } else {
+      return res.status(result.status).json({ message: result.message });
+    }
+  } catch (err) {
+    console.error('Error in shareMeal:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Helper function to add a user's meal to PendingMeals
+const addToPendingMeals = async (mealId, userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) return { success: false, status: 404, message: 'User not found' };
+
+    const meal = user.myMeals.id(mealId);
+    if (!meal) return { success: false, status: 404, message: 'Meal not found in your saved meals.' };
+
+    const newPending = new pendingMeal({
+      name: meal.name,
+      description: meal.description || '',
+      imageUrl: meal.imageUrl || '',
+      imageId: meal.imageId || null,
+      foodItems: meal.foodItems.map(item => ({
+        food: item.food,
+        quantity: item.quantity
+      })),
+      submittedBy: userId
+    });
+
+    await newPending.save();
+
+    return { success: true, pendingMeal: newPending };
+  } catch (err) {
+    console.error('Error in addToPendingMeals:', err);
+    return { success: false, status: 500, message: 'Failed to share meal' };
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -217,5 +275,6 @@ module.exports = {
   addMealToMyMeals,
   deleteMealFromMyMeals,
   showMeals,
-  updatePassword
+  updatePassword,
+  shareMeal
 };
