@@ -60,6 +60,25 @@ const adminLogin = async (req, res) => {
   }
 };
 
+//get current admin
+const getCurrentAdmin = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.admin.id);
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    res.status(200).json({
+      _id: admin._id,
+      name: admin.name,
+      email: admin.email,
+      accessLevel: admin.accessLevel,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to retrieve admin', error: err.message });
+  }
+};
+
 // Get all pending meals
 const showAllPendingMeals = async (req, res) => {
   try {
@@ -150,5 +169,6 @@ module.exports = {
   createFoodItem,
   updateMeal,
   deleteFoodItem,
-  deleteMeal
+  deleteMeal,
+  getCurrentAdmin
 };
