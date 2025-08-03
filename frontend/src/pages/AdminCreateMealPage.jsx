@@ -1,67 +1,74 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import AdminSidebar from '../components/AdminSidebar.jsx';
-import { useNavigate } from 'react-router-dom';
-import './CreateMeal.css';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import AdminSidebar from "../components/AdminSidebar.jsx";
+import { useNavigate } from "react-router-dom";
+import "./CreateMeal.css";
 
 export default function AdminCreateMeal() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const [adminData, setAdminData] = useState();
 
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     ingredients: [],
     nutrition: { calories: 0, protein: 0, carbs: 0, fat: 0 },
     imageFile: null,
   });
 
   const [share, setShare] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
 
-  const toggleSidebar = () => setSidebarVisible(v => !v);
-  const handleLogout = () => { localStorage.clear(); navigate('/login'); };
-
-  const handleFileChange = e => {
-    setFormData(f => ({ ...f, imageFile: e.target.files[0] }));
+  const toggleSidebar = () => setSidebarVisible((v) => !v);
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
   };
 
-  const handleRemoveIngredient = i => {
-    setFormData(f => ({
+  const handleFileChange = (e) => {
+    setFormData((f) => ({ ...f, imageFile: e.target.files[0] }));
+  };
+
+  const handleRemoveIngredient = (i) => {
+    setFormData((f) => ({
       ...f,
-      ingredients: f.ingredients.filter((_, idx) => idx !== i)
+      ingredients: f.ingredients.filter((_, idx) => idx !== i),
     }));
   };
 
-  const handleSearchChange = async e => {
+  const handleSearchChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
     if (!query) return setSuggestions([]);
 
     try {
-      const res = await axios.get(`http://localhost:5001/api/foodItem/search?q=${query}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get(
+        `http://localhost:5001/api/foodItem/search?q=${query}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setSuggestions(res.data);
     } catch {
       setSuggestions([]);
     }
   };
 
-  const handleAddIngredient = item => {
-    setFormData(f => {
-      if (f.ingredients.find(i => i._id === item._id)) return f;
+  const handleAddIngredient = (item) => {
+    setFormData((f) => {
+      if (f.ingredients.find((i) => i._id === item._id)) return f;
       return {
         ...f,
-        ingredients: [...f.ingredients, { ...item, quantity: 1 }]
+        ingredients: [...f.ingredients, { ...item, quantity: 1 }],
       };
     });
-    setSearchQuery('');
+    setSearchQuery("");
     setSuggestions([]);
   };
 
@@ -71,61 +78,92 @@ export default function AdminCreateMeal() {
       for (const item of formData.ingredients) {
         const qty = item.quantity || 1;
         totals.calories += item.calories * qty;
-        totals.protein  += item.protein * qty;
-        totals.carbs    += item.carbs * qty;
-        totals.fat      += item.fat * qty;
+        totals.protein += item.protein * qty;
+        totals.carbs += item.carbs * qty;
+        totals.fat += item.fat * qty;
       }
-      setFormData(f => ({ ...f, nutrition: totals }));
+      setFormData((f) => ({ ...f, nutrition: totals }));
     };
     calculateNutrition();
   }, [formData.ingredients]);
 
-  const handleSubmit = async e => {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return navigate("/adminsignin");
+
+    const fetchAdmin = async () => {
+      try {
+        const res = await axios.get("http://localhost:5001/api/admin/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setAdminData(res.data);
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+        localStorage.removeItem("token");
+        navigate("/adminsignin");
+      }
+    };
+
+    fetchAdmin();
+  }, [navigate]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const fd = new FormData();
-      fd.append('name', formData.name);
-      fd.append('description', formData.description);
-      fd.append('calories', formData.nutrition.calories);
-      fd.append('protein', formData.nutrition.protein);
-      fd.append('carbs', formData.nutrition.carbs);
-      fd.append('fat', formData.nutrition.fat);
-      fd.append('share', share);
-      fd.append('foodItems', JSON.stringify(formData.ingredients.map(i => ({
-        food: i._id,
-        quantity: i.quantity || 1
-      }))));
-      if (formData.imageFile) fd.append('image', formData.imageFile);
+      fd.append("name", formData.name);
+      fd.append("description", formData.description);
+      fd.append("calories", formData.nutrition.calories);
+      fd.append("protein", formData.nutrition.protein);
+      fd.append("carbs", formData.nutrition.carbs);
+      fd.append("fat", formData.nutrition.fat);
+      fd.append("share", share);
+      fd.append(
+        "foodItems",
+        JSON.stringify(
+          formData.ingredients.map((i) => ({
+            food: i._id,
+            quantity: i.quantity || 1,
+          }))
+        )
+      );
+      if (formData.imageFile) fd.append("image", formData.imageFile);
 
-      await axios.post('http://localhost:5001/api/admin/meal', fd, {
+      await axios.post("http://localhost:5001/api/admin/meal", fd, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
+          "Content-Type": "multipart/form-data",
+        },
       });
 
-      setSuccess('Meal saved successfully!');
+      setSuccess("Meal saved successfully!");
       setFormData({
-        name: '',
-        description: '',
+        name: "",
+        description: "",
         ingredients: [],
         nutrition: { calories: 0, protein: 0, carbs: 0, fat: 0 },
-        imageFile: null
+        imageFile: null,
       });
     } catch (err) {
-      setError(err.response?.data?.error || 'Submission failed');
+      setError(err.response?.data?.error || "Submission failed");
     }
   };
 
   return (
     <div className="create-meal-page">
-      <button className="toggle-btn" onClick={toggleSidebar}>⋮</button>
-      <AdminSidebar visible={sidebarVisible} onLogout={handleLogout} />
+      <button className="toggle-btn" onClick={toggleSidebar}>
+        ⋮
+      </button>
+      <AdminSidebar visible={sidebarVisible} onLogout={handleLogout} AdminData={adminData} />
 
-      <main className={`create-meal-content ${!sidebarVisible ? 'sidebar-hidden' : ''}`}>
+      <main
+        className={`create-meal-content ${
+          !sidebarVisible ? "sidebar-hidden" : ""
+        }`}
+      >
         <div className="create-meal-container">
           <h2>Create New Meal</h2>
           {error && <p className="error-text">{error}</p>}
@@ -134,14 +172,26 @@ export default function AdminCreateMeal() {
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Meal Name</label>
-              <input type="text" name="name" value={formData.name}
-                onChange={e => setFormData(f => ({ ...f, name: e.target.value }))} required />
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((f) => ({ ...f, name: e.target.value }))
+                }
+                required
+              />
             </div>
 
             <div className="form-group">
               <label>Description</label>
-              <textarea name="description" value={formData.description}
-                onChange={e => setFormData(f => ({ ...f, description: e.target.value }))} />
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData((f) => ({ ...f, description: e.target.value }))
+                }
+              />
             </div>
 
             <div className="form-group">
@@ -149,7 +199,7 @@ export default function AdminCreateMeal() {
               <input type="file" accept="image/*" onChange={handleFileChange} />
             </div>
 
-            <div className="form-group" style={{ position: 'relative' }}>
+            <div className="form-group" style={{ position: "relative" }}>
               <label>Search Ingredient</label>
               <input
                 type="text"
@@ -159,8 +209,11 @@ export default function AdminCreateMeal() {
               />
               {suggestions.length > 0 && (
                 <ul className="suggestions">
-                  {suggestions.map(item => (
-                    <li key={item._id} onClick={() => handleAddIngredient(item)}>
+                  {suggestions.map((item) => (
+                    <li
+                      key={item._id}
+                      onClick={() => handleAddIngredient(item)}
+                    >
                       {item.name} – {item.calories} kcal
                     </li>
                   ))}
@@ -177,16 +230,22 @@ export default function AdminCreateMeal() {
                     type="number"
                     min="1"
                     value={item.quantity || 1}
-                    onChange={e => {
+                    onChange={(e) => {
                       const val = parseInt(e.target.value) || 1;
-                      setFormData(f => {
+                      setFormData((f) => {
                         const updated = [...f.ingredients];
                         updated[i] = { ...updated[i], quantity: val };
                         return { ...f, ingredients: updated };
                       });
                     }}
                   />
-                  <button type="button" className="remove-btn" onClick={() => handleRemoveIngredient(i)}>×</button>
+                  <button
+                    type="button"
+                    className="remove-btn"
+                    onClick={() => handleRemoveIngredient(i)}
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
             </div>
@@ -194,17 +253,23 @@ export default function AdminCreateMeal() {
             <div className="nutrition-section">
               <h3>Total Nutrition</h3>
               <div className="nutrition-grid">
-                {['calories', 'protein', 'carbs', 'fat'].map(key => (
+                {["calories", "protein", "carbs", "fat"].map((key) => (
                   <div className="nutrition-input" key={key}>
                     <label>{key.charAt(0).toUpperCase() + key.slice(1)}</label>
-                    <input type="number" value={formData.nutrition[key]} readOnly />
+                    <input
+                      type="number"
+                      value={formData.nutrition[key]}
+                      readOnly
+                    />
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="btn-group">
-              <button type="submit" className="save-btn" onClick={handleSubmit}>Save to System Collection</button>
+              <button type="submit" className="save-btn" onClick={handleSubmit}>
+                Save to System Collection
+              </button>
             </div>
           </form>
         </div>
@@ -212,4 +277,3 @@ export default function AdminCreateMeal() {
     </div>
   );
 }
-              
