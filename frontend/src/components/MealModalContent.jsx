@@ -27,20 +27,20 @@ export default function MealModalContent({ selectedMeal }) {
           <div className="nutrition-item">
             <span className="nutrition-label">Calories</span>
             <span className="nutrition-value">
-              {selectedMeal.totalCalories}
+              {selectedMeal.totalCalories.toFixed(2)}
             </span>
           </div>
           <div className="nutrition-item">
             <span className="nutrition-label">Protein</span>
-            <span className="nutrition-value">{selectedMeal.totalProtein}</span>
+            <span className="nutrition-value">{selectedMeal.totalProtein.toFixed(2)}</span>
           </div>
           <div className="nutrition-item">
             <span className="nutrition-label">Carbohydrate</span>
-            <span className="nutrition-value">{selectedMeal.totalCarbs}</span>
+            <span className="nutrition-value">{selectedMeal.totalCarbs.toFixed(2)}</span>
           </div>
           <div className="nutrition-item">
             <span className="nutrition-label">Fat</span>
-            <span className="nutrition-value">{selectedMeal.totalFat}</span>
+            <span className="nutrition-value">{selectedMeal.totalFat.toFixed(2)}</span>
           </div>
         </div>
       </div>
