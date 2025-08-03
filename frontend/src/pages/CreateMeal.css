@@ -127,8 +127,14 @@
   margin-bottom: 0.5rem;
 }
 
-.sel-item input {
-  width: 60px;
+.sel-item input[type="text"] {
+  width: 150px;
+  text-align: center;
+}
+
+.sel-item input[type="number"] {
+  width: 40px;
+  text-align: center;
 }
 
 /* Buttons */
@@ -203,18 +209,24 @@
 .nutrition-section h3 {
   margin-bottom: 20px;
   color: #333;
+  transform: translateX(230px) !important;
+ 
+  
 }
 
 .nutrition-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  column-gap: 200px;
+
+  
 }
 
 .nutrition-input label {
   display: block;
   margin-bottom: 8px;
   font-size: 14px;
+  width: 100px;
   color: #666;
 }
 

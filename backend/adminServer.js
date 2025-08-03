@@ -3,11 +3,14 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const adminRoutes = require('./routes/admin');
+const mealRoute = require('./routes/meal');
+const foodItemRoute = require('./routes/fooditem');
+
 
 const app = express();
 const PORT = process.env.ADMIN_PORT;
 
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({ origin: 'http://localhost:3002' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
@@ -15,6 +18,9 @@ app.use((req, res, next) => {
   next();
 });
 app.use('/api/admin', adminRoutes);
+app.use('/api/meal',mealRoute);
+app.use('/api/fooditem', foodItemRoute);
+
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {

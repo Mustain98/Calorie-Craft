@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Sidebar from "../components/sideBar";
+import AdminSidebar from "../components/AdminSidebar.jsx";
 import { useNavigate } from "react-router-dom";
 import "./CreateMeal.css";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-export default function CreateMeal() {
+
+export default function AdminCreateMeal() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [userData, setUserData] = useState();
+  const [adminData, setAdminData] = useState();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -50,7 +49,7 @@ export default function CreateMeal() {
 
     try {
       const res = await axios.get(
-        `http://localhost:4000/api/foodItem/search?q=${query}`,
+        `http://localhost:5001/api/foodItem/search?q=${query}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -90,22 +89,22 @@ export default function CreateMeal() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return navigate("/signin");
+    if (!token) return navigate("/adminsignin");
 
-    const fetchUser = async () => {
+    const fetchAdmin = async () => {
       try {
-        const res = await axios.get("http://localhost:4000/api/users/me", {
+        const res = await axios.get("http://localhost:5001/api/admin/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUserData(res.data);
+        setAdminData(res.data);
       } catch (err) {
         console.error("Failed to fetch user:", err);
         localStorage.removeItem("token");
-        navigate("/signin");
+        navigate("/adminsignin");
       }
     };
 
-    fetchUser();
+    fetchAdmin();
   }, [navigate]);
 
   const handleSubmit = async (e) => {
@@ -133,17 +132,14 @@ export default function CreateMeal() {
       );
       if (formData.imageFile) fd.append("image", formData.imageFile);
 
-      await axios.post("http://localhost:4000/api/users/me/myMeals", fd, {
+      await axios.post("http://localhost:5001/api/admin/meal", fd, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
-      if (!share) {
-        setSuccess("Meal saved successfully!");
-        toast.success("Meal saved successfully!");
-      } else{setSuccess("Meal saved and shared successfully!");
-      toast.success("Meal saved and shared successfully!");}
+
+      setSuccess("Meal saved successfully!");
       setFormData({
         name: "",
         description: "",
@@ -153,7 +149,6 @@ export default function CreateMeal() {
       });
     } catch (err) {
       setError(err.response?.data?.error || "Submission failed");
-      toast.error("Submission failed");
     }
   };
 
@@ -162,11 +157,7 @@ export default function CreateMeal() {
       <button className="toggle-btn" onClick={toggleSidebar}>
         ⋮
       </button>
-      <Sidebar
-        visible={sidebarVisible}
-        onLogout={handleLogout}
-        userData={userData}
-      />
+      <AdminSidebar visible={sidebarVisible} onLogout={handleLogout} AdminData={adminData} />
 
       <main
         className={`create-meal-content ${
@@ -276,19 +267,8 @@ export default function CreateMeal() {
             </div>
 
             <div className="btn-group">
-              <button
-                type="submit"
-                className="save-btn"
-                onClick={() => setShare(false)}
-              >
-                Save to My Meals
-              </button>
-              <button
-                type="submit"
-                className="share-btn"
-                onClick={() => setShare(true)}
-              >
-                Save & Share
+              <button type="submit" className="save-btn" onClick={handleSubmit}>
+                Save to System Collection
               </button>
             </div>
           </form>
