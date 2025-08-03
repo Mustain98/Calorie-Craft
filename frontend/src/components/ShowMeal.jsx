@@ -71,11 +71,11 @@ const ShowMeal = ({
                   <img src={meal.imageUrl || meal.image} alt={meal.name} />
                   <div className="meal-card-content">
                     <h3>{meal.name}</h3>
-                    <p className="calories">Calories: {meal.totalCalories}</p>
+                    <p className="calories">Calories: {meal.totalCalories.toFixed(2)}</p>
                     <div className="meal-macros">
-                      <span>Protein: {meal.totalProtein}g</span>
-                      <span>Carbs: {meal.totalCarbs}g</span>
-                      <span>Fat: {meal.totalFat}g</span>
+                      <span>Protein: {meal.totalProtein.toFixed(2)}g</span>
+                      <span>Carbs: {meal.totalCarbs.toFixed(2)}g</span>
+                      <span>Fat: {meal.totalFat.toFixed(2)}g</span>
                     </div>
                   </div>
                 </div>
