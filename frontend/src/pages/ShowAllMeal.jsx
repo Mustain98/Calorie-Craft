@@ -1,11 +1,10 @@
-// src/pages/ShowAllMeal.jsx
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "../components/sideBar";
 import MealModal from "../components/MealModal";
 import ShowMeal from "../components/ShowMeal";
+import { toast } from "react-toastify";
 
 export default function ShowAllMeal() {
   const navigate = useNavigate();
@@ -54,7 +53,7 @@ export default function ShowAllMeal() {
       });
   }, [navigate]);
 
-  const toggleSidebar = () => setSidebarVisible((v) => !v);
+  const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
 
   const filteredMeals = activeTab === "my" ? userMeals : allMeals;
 
@@ -78,9 +77,11 @@ export default function ShowAllMeal() {
         }
       );
       setUserMeals((prev) => prev.filter((meal) => meal._id !== mealId));
+      toast.success("Meal is removed");
       closeNutritionModal();
     } catch (err) {
       console.error("Failed to delete meal:", err);
+      toast.error("Failed to Deleet Meal");
     }
   };
 
@@ -116,10 +117,10 @@ export default function ShowAllMeal() {
       // Update state with correct embedded meal (_id from user's myMeals)
       setUserMeals((prev) => [...prev, newMeal]);
       setSelectedMeal(newMeal); // <-- this ensures correct _id is used for deletion
-      alert("Meal saved to My Meals!");
+      toast.success("Meal is added to your collection");
     } catch (err) {
       console.error("Failed to save meal:", err);
-      alert("Failed to save meal");
+      toast.error("Unable to add to your collection");
     }
   };
 
@@ -129,9 +130,18 @@ export default function ShowAllMeal() {
         &#8942;
       </button>
 
-      {userData && <Sidebar userData={userData} visible={sidebarVisible} tab={tab} />}
+      {userData && (
+        <Sidebar userData={userData} visible={sidebarVisible} tab={tab} />
+      )}
 
-      <ShowMeal activeTab={activeTab} setActiveTab={setActiveTab} filteredMeals={filteredMeals}  sidebarVisible={sidebarVisible} handleMealClick={handleMealClick} tab={tab} />
+      <ShowMeal
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        filteredMeals={filteredMeals}
+        sidebarVisible={sidebarVisible}
+        handleMealClick={handleMealClick}
+        tab={tab}
+      />
       {/* Nutrition Modal */}
       {showNutritionModal && selectedMeal && (
         <>

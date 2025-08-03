@@ -3,7 +3,8 @@ import axios from "axios";
 import Sidebar from "../components/sideBar";
 import { useNavigate } from "react-router-dom";
 import "./CreateMeal.css";
-
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 export default function CreateMeal() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
@@ -138,8 +139,11 @@ export default function CreateMeal() {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      setSuccess("Meal saved successfully!");
+      if (!share) {
+        setSuccess("Meal saved successfully!");
+        toast.success("Meal saved successfully!");
+      } else{setSuccess("Meal saved and shared successfully!");
+      toast.success("Meal saved and shared successfully!");}
       setFormData({
         name: "",
         description: "",
@@ -149,6 +153,7 @@ export default function CreateMeal() {
       });
     } catch (err) {
       setError(err.response?.data?.error || "Submission failed");
+      toast.error("Submission failed");
     }
   };
 
@@ -157,7 +162,11 @@ export default function CreateMeal() {
       <button className="toggle-btn" onClick={toggleSidebar}>
         ⋮
       </button>
-      <Sidebar visible={sidebarVisible} onLogout={handleLogout} userData={userData} />
+      <Sidebar
+        visible={sidebarVisible}
+        onLogout={handleLogout}
+        userData={userData}
+      />
 
       <main
         className={`create-meal-content ${

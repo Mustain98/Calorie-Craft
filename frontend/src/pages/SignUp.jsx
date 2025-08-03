@@ -1,30 +1,31 @@
-import React, { useState } from 'react';
-import './SignUp.css';
-import LeftSection from '../components/LeftSection';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState } from "react";
+import "./SignUp.css";
+import LeftSection from "../components/LeftSection";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    gender: '',
-    age: '',
-    weight: '',
-    height: '',
-    activityLevel: '',
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    gender: "",
+    age: "",
+    weight: "",
+    height: "",
+    activityLevel: "",
   });
 
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
 
@@ -32,40 +33,43 @@ export default function SignupPage() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.');
+      setError("Passwords do not match.");
       return;
     }
 
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
-      const response = await axios.post('http://localhost:4000/api/users/register', {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        age: Number(formData.age),
-        gender: formData.gender,
-        weight: Number(formData.weight),
-        height: Number(formData.height),
-        activityLevel: formData.activityLevel
-      });
+      const response = await axios.post(
+        "http://localhost:4000/api/users/register",
+        {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          age: Number(formData.age),
+          gender: formData.gender,
+          weight: Number(formData.weight),
+          height: Number(formData.height),
+          activityLevel: formData.activityLevel,
+        }
+      );
 
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem("token", response.data.token);
 
-      setSuccess('User registered successfully! Redirecting to login...');
+      setSuccess("User registered successfully! Redirecting to login...");
+      toast.success("Registration Successful");
       setTimeout(() => {
-        navigate('/login');
+        navigate("/login");
       }, 1500);
-
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed.');
+      setError(err.response?.data?.error || "Registration failed.");
+      toast.error("Registration failed.");
     }
   };
 
   return (
     <div className="signup-page">
-
       <LeftSection />
 
       <div className="signup-right">

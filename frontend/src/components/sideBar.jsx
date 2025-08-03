@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../logo.png';
 import '../pages/sideBar.css';
+import { toast } from 'react-toastify';
 
 export default function Sidebar({
   visible,
@@ -14,6 +15,7 @@ export default function Sidebar({
     setTimeout(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    toast.success("Logout Successfully");
     navigate('/login');
   }, 1000);
   };
