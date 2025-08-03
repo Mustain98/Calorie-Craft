@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './SignUp.css';
-import LeftSection from './LeftSection';
+import LeftSection from '../components/LeftSection';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 

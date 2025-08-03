@@ -4,7 +4,8 @@ import LeftSection from '../components/LeftSection';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-export default function SigninPage() {
+
+export default function AdminSigninPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -12,6 +13,9 @@ export default function SigninPage() {
 
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  
+  
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -29,14 +33,14 @@ export default function SigninPage() {
     }
 
     try {
-      const res = await axios.post('http://localhost:4000/api/users/login', formData);
+      const res = await axios.post('http://localhost:5001/api/admin/login', formData);
 
       // Store token & user data in localStorage
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data));
 
       setError('');
-      navigate('/profile');
+      navigate('/adminpage');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
     }

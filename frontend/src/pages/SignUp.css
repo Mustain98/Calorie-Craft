@@ -6,6 +6,8 @@
 
 /* Right white form section */
 .signup-right {
+  display: flex;
+  flex-direction: column;
   width: 65%; /* Increased from 60% */
   background-color: white;
   display: flex;

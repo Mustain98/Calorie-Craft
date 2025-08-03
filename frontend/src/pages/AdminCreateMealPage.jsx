@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Sidebar from '../components/sideBar';
+import AdminSidebar from '../components/AdminSidebar.jsx';
 import { useNavigate } from 'react-router-dom';
 import './CreateMeal.css';
 
-export default function CreateMeal() {
+export default function AdminCreateMeal() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,7 +44,7 @@ export default function CreateMeal() {
     if (!query) return setSuggestions([]);
 
     try {
-      const res = await axios.get(`http://localhost:4000/api/foodItem/search?q=${query}`, {
+      const res = await axios.get(`http://localhost:5001/api/foodItem/search?q=${query}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuggestions(res.data);
@@ -100,7 +100,7 @@ export default function CreateMeal() {
       }))));
       if (formData.imageFile) fd.append('image', formData.imageFile);
 
-      await axios.post('http://localhost:4000/api/users/me/myMeals', fd, {
+      await axios.post('http://localhost:5001/api/admin/meal', fd, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -123,7 +123,7 @@ export default function CreateMeal() {
   return (
     <div className="create-meal-page">
       <button className="toggle-btn" onClick={toggleSidebar}>⋮</button>
-      <Sidebar visible={sidebarVisible} onLogout={handleLogout} />
+      <AdminSidebar visible={sidebarVisible} onLogout={handleLogout} />
 
       <main className={`create-meal-content ${!sidebarVisible ? 'sidebar-hidden' : ''}`}>
         <div className="create-meal-container">
@@ -204,8 +204,7 @@ export default function CreateMeal() {
             </div>
 
             <div className="btn-group">
-              <button type="submit" className="save-btn" onClick={() => setShare(false)}>Save to My Meals</button>
-              <button type="submit" className="share-btn" onClick={() => setShare(true)}>Save & Share</button>
+              <button type="submit" className="save-btn" onClick={handleSubmit}>Save to System Collection</button>
             </div>
           </form>
         </div>
@@ -213,3 +212,4 @@ export default function CreateMeal() {
     </div>
   );
 }
+              

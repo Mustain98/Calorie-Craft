@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-import Sidebar from './sideBar';
+import Sidebar from '../components/sideBar';
 import './NutritionalRequirement.css';
 
 export default function NutritionalRequirement() {
