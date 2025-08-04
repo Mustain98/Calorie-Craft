@@ -1,23 +1,26 @@
-import React, { useState } from "react";
-import "./SignIn.css";
-import LeftSection from "../components/LeftSection";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { toast } from "react-toastify";
+import React, { useState } from 'react';
+import './SignIn.css';
+import LeftSection from '../components/LeftSection';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-export default function SigninPage() {
+
+export default function AdminSigninPage() {
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    email: '',
+    password: '',
   });
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  
+  
 
   const handleChange = (e) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.value
     }));
   };
 
@@ -25,37 +28,32 @@ export default function SigninPage() {
     e.preventDefault();
 
     if (!formData.email || !formData.password) {
-      setError("Please enter email and password.");
+      setError('Please enter email and password.');
       return;
     }
 
     try {
-      const res = await axios.post(
-        "http://localhost:4000/api/users/login",
-        formData
-      );
+      const res = await axios.post('http://localhost:5001/api/admin/login', formData);
 
       // Store token & user data in localStorage
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data));
-      toast.success("Login successful!");
-      setError("");
-      navigate("/profile");
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data));
+
+      setError('');
+      navigate('/adminpage');
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed. Please try again.");
-      toast.error(error);
+      setError(err.response?.data?.error || 'Login failed. Please try again.');
     }
   };
 
   return (
     <div className="signin-page">
-      <LeftSection />
 
+      <LeftSection />
+      
       <div className="signin-right">
         <form className="signin-form" onSubmit={handleSubmit}>
-          <h2>
-            <span className="green-text">Welcome</span> Back!
-          </h2>
+          <h2><span className="green-text">Welcome</span> Back!</h2>
           <p className="subtitle">Sign in to get started</p>
 
           <input

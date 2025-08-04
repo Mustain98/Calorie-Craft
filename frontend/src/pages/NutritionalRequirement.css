@@ -123,7 +123,15 @@
   border-radius: 50%;
   display: inline-block;
 }
-
 .yellow { background: #facc15; }
 .cyan   { background: #06b6d4; }
 .purple { background: #8b5cf6; }
+/* .mode-btn.selected {
+  background-color: #99d209;
+  color: white;
+  border-color: #99d209;
+}
+
+.mode-btn.selected:hover {
+  background-color: #85b800;
+} */

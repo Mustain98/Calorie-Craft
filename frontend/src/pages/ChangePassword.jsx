@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './ChangePassword.css';
-import LeftSection from './LeftSection';
+import LeftSection from '../components/LeftSection';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 

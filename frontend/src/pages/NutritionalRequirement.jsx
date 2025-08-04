@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-import Sidebar from './sideBar';
+import Sidebar from '../components/sideBar';
 import './NutritionalRequirement.css';
 
 export default function NutritionalRequirement() {
@@ -17,6 +17,7 @@ export default function NutritionalRequirement() {
     fats: '',
   });
   const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState(false);
 
   // Fetch user → get nutritionalRequirement
   const fetchUser = async () => {
@@ -28,6 +29,7 @@ export default function NutritionalRequirement() {
       });
       setUserData(res.data);
       setFormValues(res.data.nutritionalRequirement);
+      setMode(res.data.manualNutrition);
     } catch {
       localStorage.clear();
       navigate('/signin');
@@ -51,11 +53,13 @@ export default function NutritionalRequirement() {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
     setManualMode(false);
+    setMode(false);
     fetchUser();
   };
 
   const handleSetManual = () => {
     setManualMode(true);
+    setMode(true);
   };
 
   const handleChange = e => {
@@ -78,6 +82,7 @@ export default function NutritionalRequirement() {
     });
     setManualMode(false);
     fetchUser();
+    console.log(setMode);
   };
 
   if (loading) return <div className="nutri-loading">Loading...</div>;
@@ -99,12 +104,14 @@ export default function NutritionalRequirement() {
           <h2>My Nutrition Targets</h2>
           <p className="calories">{targets.calories} kcal</p>
         </header>
-
+        <div style={{ marginBottom: '1rem', fontWeight: 'bold' }}>
+            Mode: {mode ? 'Manual' : 'Default'}
+        </div>
         <div className="mode-buttons">
           <button
             className="mode-btn"
             onClick={handleSetDefault}
-            disabled={loading || !manualMode}
+            disabled={loading}
           >
             Set Default
           </button>
@@ -151,6 +158,7 @@ export default function NutritionalRequirement() {
           </ul>
         )}
       </div>
+
     </div>
   );
 }

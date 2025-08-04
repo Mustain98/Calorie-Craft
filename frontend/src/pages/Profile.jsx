@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
-import Sidebar from './sideBar';
+import Sidebar from '../components/sideBar';
 import axios from 'axios';
 
 export default function ProfilePage() {

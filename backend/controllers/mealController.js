@@ -14,7 +14,6 @@ const createMeal = async (req, res) => {
       try {
         foodItems = JSON.parse(foodItems);
       } catch (err) {
-        // Delete uploaded image before returning error
         if (imageId) await cloudinary.uploader.destroy(imageId);
         return res.status(400).json({ error: 'Invalid JSON format for foodItems' });
       }
@@ -36,7 +35,6 @@ const createMeal = async (req, res) => {
     await newMeal.save();
     res.status(201).json(newMeal);
   } catch (err) {
-    // Handle other failures: e.g., MongoDB errors
     if (imageId) await cloudinary.uploader.destroy(imageId);
     res.status(500).json({ error: 'Failed to create meal', details: err.message });
   }
