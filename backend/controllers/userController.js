@@ -5,6 +5,7 @@ const Meal = require('../models/meal');
 const FoodItem = require('../models/foodItem'); 
 const pendingMeal=require('../models/pendingMeal');
 const {cloudinary}=require('../utils/cloudinary');
+const {isDuplicateInMyMeals,isDuplicateInPendingMeals} = require('../utils/isDuplicateMeal');
 // Generate JWT
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -114,7 +115,10 @@ const addMealToMyMeals = async (req, res) => {
 
     // Calculate nutrition
     const totals = await calculateMealMacros(parsedItems);
-
+    const isDuplicate = await isDuplicateInMyMeals(userId, name);
+    if(isDuplicate.isDuplicate){
+      return res.status(400).json({ error: 'This meal already exists in your saved meals.' });
+    }
     const newEmbeddedMeal = {
       name,
       description,
@@ -219,9 +223,8 @@ const updatePassword =async (req,res) =>{
 // Controller to share a meal
 const shareMeal = async (req, res) => {
   try {
-    const { mealId } = req.params;
+    const mealId  = req.params;
     const userId = req.user._id;
-
     const result = await addToPendingMeals(mealId, userId);
     if (result.success) {
       return res.status(201).json({
@@ -240,11 +243,18 @@ const shareMeal = async (req, res) => {
 // Helper function to add a user's meal to PendingMeals
 const addToPendingMeals = async (mealId, userId) => {
   try {
+    
     const user = await User.findById(userId);
     if (!user) return { success: false, status: 404, message: 'User not found' };
 
     const meal = user.myMeals.id(mealId);
     if (!meal) return { success: false, status: 404, message: 'Meal not found in your saved meals.' };
+      const isDuplicate = await isDuplicateInPendingMeals(userId, meal.name);
+    console.log('Duplicate in pending meals:', isDuplicate);
+
+    if (isDuplicate) {
+      return { success: false, status: 400, message: 'You have already shared a meal with this name.' };
+    };
 
     const newPending = new pendingMeal({
       name: meal.name,

@@ -144,10 +144,6 @@ const deletePendingMeal = async (req, res) => {
       return res.status(404).json({ error: 'Pending meal not found' });
     }
 
-    if (meal.imageId) {
-      await cloudinary.uploader.destroy(meal.imageId);
-    }
-
     await PendingMeals.findByIdAndDelete(pendingMealId);
 
     res.status(200).json({ message: 'Pending meal deleted successfully' });
