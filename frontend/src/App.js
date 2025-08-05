@@ -18,10 +18,16 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<SignIn />} />
-        <Route path="/login" element={<SignIn />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/login" element={<SigninPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/changepassword" element={<ChangePasswordPage />} />
+        <Route path="/showmeal" element={<ShowAllMeal />} />
+        <Route path="/createmeal" element={<CreateMeal />} />
+        <Route path="/mealplan" element={<MealPlan />} />
+        <Route path="/nutrition" element={<NutritionalRequirement />} />
+        <Route path="/goal" element={<GoalSetting />} />
       </Routes>
       <ToastContainer position="top-center" autoClose={3000} />
     </Router>
