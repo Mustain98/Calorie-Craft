@@ -11,9 +11,9 @@ const isDuplicateInPendingMeals = async (userId, name) => {
   const pendingMeal = await PendingMeal.findOne({ name, submittedBy: userId });
   const systemMeal = await Meal.findOne({name});
   if (pendingMeal||systemMeal) {
-    return true;
+    return { isDuplicate: true, source: 'myMeals (name)' };
   }
-  return false;
+  return { isDuplicate: false };
 };
 
 

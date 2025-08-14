@@ -1,8 +1,7 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-const calculateMealMacros=require('../utils/calculateMealMacros');
-const Meal = require('../models/meal');         
-const FoodItem = require('../models/foodItem'); 
+const Meal = require('../models/meal'); 
+const {prepareMealData}=require('../utils/mealService');    
 const pendingMeal=require('../models/pendingMeal');
 const {cloudinary}=require('../utils/cloudinary');
 const {isDuplicateInMyMeals,isDuplicateInPendingMeals} = require('../utils/isDuplicateMeal');
@@ -90,64 +89,25 @@ const updateUser = async (req, res) => {
 const addMealToMyMeals = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name,description,foodItems,share } = req.body;
+    const mealData = await prepareMealData({ ...req.body, file: req.file });
 
-    let parsedItems = typeof foodItems === 'string' ? JSON.parse(foodItems) : foodItems;
+    // Check duplicates
+    const result = await isDuplicateInMyMeals(userId, mealData.name);
+    if (result.isDuplicate) return res.status(400).json({ error: 'Meal already exists' });
 
-    if (!Array.isArray(parsedItems) || parsedItems.length === 0) {
-      return res.status(400).json({ error: 'Invalid or missing food items' });
-    }
-
-    for (const item of parsedItems) {
-      if (!item.food || !item.quantity) {
-        return res.status(400).json({ error: 'Each food item must have a food ID and quantity' });
-      }
-    }
-
-    // Accept imageUrl from req.body (not just req.file)
-    const imageUrl = req.body.imageUrl || req.file?.path || '';
-    const imageId = req.file?.filename||'';
-    // Embed food names inside items (you can skip if you just store IDs)
-    const populatedItems = parsedItems.map(item => ({
-      food: item.food,
-      quantity: item.quantity
-    }));
-
-    // Calculate nutrition
-    const totals = await calculateMealMacros(parsedItems);
-    const isDuplicate = await isDuplicateInMyMeals(userId, name);
-    if(isDuplicate.isDuplicate){
-      return res.status(400).json({ error: 'This meal already exists in your saved meals.' });
-    }
-    const newEmbeddedMeal = {
-      name,
-      description,
-      imageUrl,
-      imageId,
-      foodItems: populatedItems,
-      ...totals
-    };
-
-    // Save to user
+    // Push embedded meal
     const user = await User.findById(userId);
-    user.myMeals.push(newEmbeddedMeal);
+    user.myMeals.push(mealData);
     await user.save();
 
-    // Populate food names in embedded meal before returning
-    await user.populate('myMeals.foodItems.food', 'name');
-
-    const savedMeal = user.myMeals[user.myMeals.length - 1];
-    if (share) {
-      await addToPendingMeals(savedMeal._id, userId);
-    }
-
-    res.status(201).json({ message: 'Meal saved to your profile', meal: savedMeal });
-
+    res.status(201).json({ message: 'Meal saved to your profile', meal: user.myMeals[user.myMeals.length - 1] });
   } catch (err) {
-    console.error('Error adding meal:', err);
-    res.status(500).json({ error: 'Server error: failed to save meal' });
+    if (req.file?.filename) await cloudinary.uploader.destroy(req.file.filename);
+    console.log(err);
+    res.status(400).json({ error: err.message });
   }
 };
+
 
 
 // Delete meal from user's meals
@@ -249,10 +209,9 @@ const addToPendingMeals = async (mealId, userId) => {
 
     const meal = user.myMeals.id(mealId);
     if (!meal) return { success: false, status: 404, message: 'Meal not found in your saved meals.' };
-      const isDuplicate = await isDuplicateInPendingMeals(userId, meal.name);
-    console.log('Duplicate in pending meals:', isDuplicate);
+      const result = await isDuplicateInPendingMeals(userId, meal.name);
 
-    if (isDuplicate) {
+    if (result.isDuplicate) {
       return { success: false, status: 400, message: 'You have already shared a meal with this name.' };
     };
 
@@ -265,6 +224,7 @@ const addToPendingMeals = async (mealId, userId) => {
         food: item.food,
         quantity: item.quantity
       })),
+      categories:meal.categories,
       submittedBy: userId
     });
 

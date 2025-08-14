@@ -26,6 +26,7 @@ export default function MealForm({
     ingredients: [],
     nutrition: { calories: 0, protein: 0, carbs: 0, fat: 0 },
     imageFile: null,
+    category:[]
   });
 
   const [share, setShare] = useState(false);
@@ -133,6 +134,7 @@ export default function MealForm({
       fd.append("protein", formData.nutrition.protein);
       fd.append("carbs", formData.nutrition.carbs);
       fd.append("fat", formData.nutrition.fat);
+      fd.append("category", JSON.stringify(formData.category));
       fd.append("share", share);
       fd.append(
         "foodItems",
@@ -161,6 +163,7 @@ export default function MealForm({
         ingredients: [],
         nutrition: { calories: 0, protein: 0, carbs: 0, fat: 0 },
         imageFile: null,
+        category:[]
       });
       setSearchQuery("");
       setSuggestions([]);
@@ -253,7 +256,7 @@ export default function MealForm({
                       onClick={() => handleAddIngredient(item)}
                       className="px-3 py-2 cursor-pointer hover:bg-indigo-100"
                     >
-                      {item.name} – {item.calories} kcal
+                      {item.name} ({item.measuringUnit.toUpperCase()}) – {item.calories} kcal
                     </li>
                   ))}
                 </ul>
@@ -302,6 +305,12 @@ export default function MealForm({
                     }}
                     className="w-20 border border-gray-300 rounded px-2 py-1"
                   />
+                  <span className="text-gray-600 select-none">
+                    {item.measuringUnit.toLowerCase() === "pc"
+                      ? `x ${item.totalunitweight} gm per ${item.measuringUnit}`
+                      : `x ${item.totalunitweight} ${item.measuringUnit}`}
+                  </span>
+
                   <button
                     type="button"
                     onClick={() => handleRemoveIngredient(i)}
@@ -312,6 +321,38 @@ export default function MealForm({
                   </button>
                 </div>
               ))}
+            </div>
+              {/* Category */}
+            <div className="mb-4">
+              <label className="block mb-1 font-medium text-gray-700">
+                Categories
+              </label>
+              <div className="flex flex-wrap gap-3">
+                {["breakfast", "lunch", "dinner", "snack", "main dish", "side dish","dessert","drink"].map((cat) => (
+                  <label key={cat} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      value={cat}
+                      checked={formData.category.includes(cat)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData((f) => ({
+                            ...f,
+                            category: [...f.category, cat],
+                          }));
+                        } else {
+                          setFormData((f) => ({
+                            ...f,
+                            category: f.category.filter((c) => c !== cat),
+                          }));
+                        }
+                      }}
+                      className="form-checkbox h-4 w-4 text-indigo-600"
+                    />
+                    <span className="capitalize">{cat}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             {/* Nutrition Section */}

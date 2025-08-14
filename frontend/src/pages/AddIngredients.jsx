@@ -34,12 +34,15 @@ export default function AddIngreidentPage() {
     calories: '', 
     protein: '', 
     carbs: '', 
-    fat: '' });
+    fat: '' ,
+    measuringUnit:'',
+    totalunitweight:'',
+  });
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const token = localStorage.getItem('token');
+  // const token = localStorage.getItem('token');
 
   const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
   const handleLogout = () => { localStorage.clear(); navigate('/login'); };
@@ -58,13 +61,14 @@ export default function AddIngreidentPage() {
        { headers: { Authorization: `Bearer ${token}` } }
      );
      
-
        setSuccess(`"${res.data.name}" created successfully!`);
+       toast.success(`"${res.data.name}" created successfully!`);
        // reset form
-       setFormData({ name:'', category:'', calories:'', protein:'', carbs:'', fat:'' });
+       setFormData({ name:'', category:'', calories:'', protein:'', carbs:'', fat:'',measuringUnit:'',totalunitweight:'' });
      } catch (err) {
        console.error('createFoodItem error:', err.response?.status, err.response?.data);
        setError(err.response?.data?.error || 'Failed to create food item');
+       toast.error(err.response?.data?.error || 'Failed to create food item');
      }
   };
   const handleChange = e => {
@@ -157,6 +161,40 @@ export default function AddIngreidentPage() {
                   </div>
                 ))}
               </div>
+            </div>
+            {/* Measuring Unit */}
+            <div>
+              <label className="block mb-1 font-medium text-gray-700">
+                Measuring Unit
+              </label>
+              <select
+                name="measuringUnit"
+                value={formData.measuringUnit}
+                onChange={handleChange}
+                required
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">Select Unit</option>
+                {['ml','gm','pc'].map(unit => (
+                  <option key={unit} value={unit}>
+                    {unit.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </div>
+              {/* Unit Weight (grams per piece or ml) */}
+            <div>
+                  <label className="block mb-1 font-medium text-gray-700">
+                    Unit Weight (in grams)
+                  </label>
+                  <input
+                    type="number"
+                    name="totalunitweight"
+                    value={formData.totalunitweight || ''}
+                    onChange={handleChange}
+                    required
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
             </div>
 
             {/* Submit Button */}

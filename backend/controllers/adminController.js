@@ -121,6 +121,8 @@ const addToSystemMeals = async (req, res) => {
       imageUrl: pendingMeal.imageUrl,
       imageId: pendingMeal.imageId,
       foodItems: newFoodItems,
+      portionSize:pendingMeal.portionSize,
+      categories:pendingMeal.categories
     });
 
     await newMeal.save();
