@@ -43,6 +43,7 @@ export default function Sidebar({
         <button onClick={() => navigate('/mealplan')}>Meal Plan</button>
         <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
         <button onClick={() => navigate('/goal')}>Goal Setting</button>
+        <button onClick={() => navigate('/mealsetting')}>Meal Settings</button>
         <button onClick={handleLogout}>Log out</button>
       </nav>
 
