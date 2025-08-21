@@ -11,13 +11,33 @@ const getAllFoodItems = async (req, res) => {
 };
 
 // Get a food item by its name (case‑insensitive exact match)
-const getFoodItemByName = async (req, res) => {
+// const getFoodItemByName = async (req, res) => {
+//   try {
+//     // Build a regex for an exact, case‑insensitive match
+//     const nameParam = req.params.name.trim();
+//     const regex = new RegExp(`^${nameParam}$`, 'i');
+
+//     const item = await foodItem.findOne({ name: regex });
+
+//     if (!item) {
+//       return res.status(404).json({ error: 'Food item not found' });
+//     }
+
+//     res.status(200).json(item); // contains the _id, name, macros etc.
+//   } catch (err) {
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// };
+
+
+//get fooditem by category
+const getFoodItemByCategory=async(req,res)=>{
   try {
     // Build a regex for an exact, case‑insensitive match
     const nameParam = req.params.name.trim();
     const regex = new RegExp(`^${nameParam}$`, 'i');
 
-    const item = await foodItem.findOne({ name: regex });
+    const item = await foodItem.findOne({ category: regex });
 
     if (!item) {
       return res.status(404).json({ error: 'Food item not found' });
@@ -27,8 +47,7 @@ const getFoodItemByName = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
-};
-
+}
 // Delete a food item by ID
 const deleteFoodItem = async (req, res) => {
   try {
@@ -70,7 +89,7 @@ const searchFoodItems = async (req, res) => {
       return res.status(400).json({ error: 'Missing search query' });
     }
 
-    const regex = new RegExp(query.trim(), 'i'); // case-insensitive partial match
+    const regex = new RegExp(query.trim(), 'i'); 
 
     const items = await foodItem.find({ name: regex }).limit(10).sort({ name: 1 });
 
@@ -83,8 +102,8 @@ const searchFoodItems = async (req, res) => {
 
 module.exports = {
   getAllFoodItems,
-  getFoodItemByName,
   deleteFoodItem,
   createFoodItem,
-  searchFoodItems
+  searchFoodItems,
+  getFoodItemByCategory
 };
