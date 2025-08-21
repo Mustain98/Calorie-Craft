@@ -90,6 +90,11 @@ EmbeddedMealSchema.pre('save', async function (next) {
 
 const EmbeddedTimedMealConfig =new mongoose.Schema({
   name:{type:String,required:true},
+    type: { 
+    type: String, 
+    enum: ["breakfast", "lunch", "dinner", "snack", "brunch", "supper"], 
+    required: true 
+  },
   caloriePortion:{type:Number,required:true},
   carbPortion:{type:Number,required:true},
   proteinPortion:{type:Number,required:true},
@@ -117,9 +122,9 @@ const UserSchema = new mongoose.Schema({
   timedMealConfig: {
     type: [EmbeddedTimedMealConfig],
     default: [
-      { name: 'Breakfast', caloriePortion: 0.3, carbPortion: 0.35, proteinPortion: 0.3, fatPortion: 0.3, order: 0 },
-      { name: 'Lunch', caloriePortion: 0.4, carbPortion: 0.4, proteinPortion: 0.35, fatPortion: 0.35, order: 1 },
-      { name: 'Dinner', caloriePortion: 0.3, carbPortion: 0.25, proteinPortion: 0.35, fatPortion: 0.35, order: 2 }
+      { name: 'Breakfast', type:'breakfast', caloriePortion: 0.3, carbPortion: 0.35, proteinPortion: 0.3, fatPortion: 0.3, order: 0 },
+      { name: 'Lunch', type:'lunch', caloriePortion: 0.4, carbPortion: 0.4, proteinPortion: 0.35, fatPortion: 0.35, order: 1 },
+      { name: 'Dinner', type:'dinner', caloriePortion: 0.3, carbPortion: 0.25, proteinPortion: 0.35, fatPortion: 0.35, order: 2 }
     ]
   },
   weekPlan: {

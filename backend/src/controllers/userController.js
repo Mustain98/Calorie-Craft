@@ -1,7 +1,7 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const Meal = require('../models/meal'); 
-const {prepareMealData}=require('../utils/mealService');    
+const {prepareMealData}=require('../service/mealService');    
 const pendingMeal=require('../models/pendingMeal');
 const {cloudinary}=require('../utils/cloudinary');
 const {isDuplicateInMyMeals,isDuplicateInPendingMeals} = require('../utils/isDuplicateMeal');
@@ -237,6 +237,53 @@ const addToPendingMeals = async (mealId, userId) => {
   }
 };
 
+
+//show timed meal configuration
+const showTimedMealConfiguration =async (req,res)=>{
+  try{
+    const user =await User.findById(req.user.id);
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const timedMealConfiguration=user.timedMealConfig;
+
+    if(timedMealConfiguration){
+      return res.json({timedMealConfiguration});
+    }
+      return res.json({ message: 'No meal configuration found' });
+  }catch(err){
+    res.status(500).json({ error: 'Failed to fetch user meal configuration' });
+  }
+}
+// Update user timed meal configuration
+const updateTimedMealConfiguration = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const { timedMealConfig } = req.body;
+
+    if (!timedMealConfig || !Array.isArray(timedMealConfig)) {
+      return res.status(400).json({ error: "Invalid meal configuration data" });
+    }
+
+    user.timedMealConfig = timedMealConfig;
+
+    // Save user
+    await user.save();
+
+    res.json({
+      message: "Meal configuration updated successfully",
+    });
+  } catch (err) {
+    console.error("Error updating meal config:", err);
+    res.status(500).json({ error: "Failed to update meal configuration" });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -246,5 +293,7 @@ module.exports = {
   deleteMealFromMyMeals,
   showMeals,
   updatePassword,
-  shareMeal
+  shareMeal,
+  showTimedMealConfiguration,
+  updateTimedMealConfiguration
 };

@@ -2,9 +2,10 @@ const Admin = require('../models/admin');
 const Meal = require('../models/meal');
 const FoodItem = require('../models/foodItem');
 const PendingMeals = require('../models/pendingMeal'); 
-const { cloudinary } = require('../utils/cloudinary');
 const jwt = require('jsonwebtoken');
-
+const {createMeal,updateMeal,deleteMeal}=require('./mealController');
+const {createFoodItem,deleteFoodItem}=require('./foodItemController');
+const {cloneImage}=require('../utils/cloudinary');
 // Generate JWT
 const generateToken = (id) => {
   return jwt.sign({ id, role: 'admin' }, process.env.JWT_SECRET, {
@@ -98,6 +99,9 @@ const addToSystemMeals = async (req, res) => {
     if (!pendingMeal) {
       return res.status(404).json({ error: 'Pending meal not found' });
     }
+    const cloned = await cloneImage(pendingMeal.imageUrl, pendingMeal.imageId);
+    const newImageUrl = cloned?.url || '';
+    const newImageId = cloned?.id || '';
 
     const newFoodItems = await Promise.all(
       pendingMeal.foodItems.map(async (item) => {
@@ -118,8 +122,8 @@ const addToSystemMeals = async (req, res) => {
     const newMeal = new Meal({
       name: pendingMeal.name,
       description: pendingMeal.description,
-      imageUrl: pendingMeal.imageUrl,
-      imageId: pendingMeal.imageId,
+      imageUrl: newImageUrl,
+      imageId: newImageId,
       foodItems: newFoodItems,
       portionSize:pendingMeal.portionSize,
       categories:pendingMeal.categories
@@ -155,8 +159,6 @@ const deletePendingMeal = async (req, res) => {
   }
 };
 
-const {createMeal,updateMeal,deleteMeal}=require('./mealController');
-const {createFoodItem,deleteFoodItem}=require('./foodItemController');
 module.exports = {
   createAdmin,
   adminLogin,

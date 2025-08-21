@@ -1,6 +1,6 @@
 const { json } = require('express');
 const Meal = require('../models/meal');
-const {prepareMealData}=require('../utils/mealService');
+const {prepareMealData}=require('../service/mealService');
 const foodItem=require('../models/foodItem')
 const {cloudinary}=require('../utils/cloudinary');
 
@@ -22,7 +22,7 @@ const createMeal = async (req, res) => {
 // @desc    Update an existing meal
 const updateMeal = async (req, res) => {
   try {
-    const { name, imageUrl, foodItems } = req.body;
+    const { name, description, foodItems } = req.body;
 
     const meal = await Meal.findById(req.params.id);
     if (!meal) {
@@ -30,8 +30,13 @@ const updateMeal = async (req, res) => {
     }
 
     if (name) meal.name = name;
-    if (imageUrl !== undefined) meal.imageUrl = imageUrl;
-    if (imageId !== undefined) meal.imageId= imageId;
+    if (req.file) {
+      meal.imageUrl = req.file.path;
+      meal.imageId = req.file.filename;
+    }
+    if(description){
+      meal.description=description;
+    }
     if (category) {
     let parsedCategory = category;
       if (typeof category === 'string') {
@@ -71,7 +76,7 @@ const deleteMeal = async (req, res) => {
   }
 };
 
-// (Optional) Get all meals
+//  Get all meals
 const getAllMeals = async (req, res) => {
   try {
     const meals = await Meal.find().populate('foodItems.food');
@@ -81,7 +86,7 @@ const getAllMeals = async (req, res) => {
   }
 };
 
-// (Optional) Get single meal
+//  Get single meal
 const getMealById = async (req, res) => {
   try {
     const meal = await Meal.findById(req.params.id).populate('foodItems.food');
