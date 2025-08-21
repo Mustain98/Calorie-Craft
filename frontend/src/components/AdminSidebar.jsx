@@ -36,6 +36,7 @@ export default function AdminSidebar({
                 <button onClick={() => navigate('/admincreatemeal')}>Create Meal</button>
                 <button onClick={() => navigate('/addingredient')}>Create Ingredients</button>
                 <button onClick={() => navigate('/adminshowmeals')}>Show Meals</button>
+                <button onClick={() => navigate('/showingredients')}>Show Ingredients</button>
                 <button onClick={()=> navigate('/createadmin')}>Create Admin </button>
                 <button onClick={handleLogout}>Log out</button>
               </nav>

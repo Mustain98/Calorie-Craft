@@ -8,6 +8,7 @@ import AdminSigninPage from "./pages/AdminSignIn";
 import ChangePasswordPage from "./pages/ChangePassword";
 import CreateAdminPage from "./pages/CreateAdmin";
 import AddIngreidentPage from "./pages/AddIngredients";
+import ShowIngredients from "./pages/ShowIngredients";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -23,6 +24,7 @@ export default function AdminApp() {
         {/*<Route path="/changepassword" element={<ChangePasswordPage />} />*/}
         <Route path="/createadmin" element={<CreateAdminPage />} />
         <Route path="/addingredient" element={<AddIngreidentPage />} />
+        <Route path="/showingredients" element={<ShowIngredients/>} />
 
         {/* Add more admin routes here */}
       </Routes>
