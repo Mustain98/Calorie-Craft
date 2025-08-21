@@ -8,6 +8,8 @@ import AdminSigninPage from "./pages/AdminSignIn";
 import ChangePasswordPage from "./pages/ChangePassword";
 import CreateAdminPage from "./pages/CreateAdmin";
 import AddIngreidentPage from "./pages/AddIngredients";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function AdminApp() {
   return (
@@ -24,6 +26,7 @@ export default function AdminApp() {
 
         {/* Add more admin routes here */}
       </Routes>
+      <ToastContainer position="top-center" autoClose={3000} />
     </Router>
   );
 }

@@ -1,21 +1,23 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+// Imports
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import AdminSidebar from "../components/AdminSidebar";
 import MealModal from "../components/MealModal";
 import ShowMeal from "../components/ShowMeal";
+import { toast } from "react-toastify";
 
 export default function AdminShowMeals() {
+  const navigate = useNavigate();
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [activeTab, setActiveTab] = useState("system");
   const [allMeals, setAllMeals] = useState([]);
+  const [pendingMeals, setPendingMeals] = useState([]);
+  const [adminData, setAdminData] = useState(null);
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [showNutritionModal, setShowNutritionModal] = useState(false);
-  const [sidebarVisible, setSidebarVisible] = useState(true);
-  const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
-  const [activeTab, setActiveTab] = useState("system"); // 'system' or 'pending'
-  const [adminData, setAdminData] = useState({});
-  const [pendingMeals, setPendingMeals] = useState([]);
-  const navigate = useNavigate();
   const tab = "pending,system";
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return navigate("/adminsignin");
@@ -29,10 +31,7 @@ export default function AdminShowMeals() {
         localStorage.removeItem("token");
         navigate("/adminsignin");
       });
-  }, [navigate]);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
     axios
       .get("http://localhost:5001/api/admin/pending-meals", {
         headers: { Authorization: `Bearer ${token}` },
@@ -44,7 +43,11 @@ export default function AdminShowMeals() {
       .get("http://localhost:5001/api/meal")
       .then((res) => setAllMeals(res.data))
       .catch((err) => console.error("Failed to load meals:", err));
-  }, [activeTab]);
+  }, []);
+
+  const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
+
+  const filteredMeals = activeTab === "pending" ? pendingMeals : allMeals;
 
   const handleMealClick = (meal) => {
     setSelectedMeal(meal);
@@ -52,65 +55,58 @@ export default function AdminShowMeals() {
   };
 
   const closeNutritionModal = () => {
-    setShowNutritionModal(false);
     setSelectedMeal(null);
+    setShowNutritionModal(false);
   };
 
-  const filteredMeals = activeTab === "pending" ? pendingMeals : allMeals;
   const handleDeleteMeal = async () => {
     const token = localStorage.getItem("token");
-    try {
-      if (activeTab == "pending") {
-        await axios.delete(
-          `http://localhost:5001/api/admin/pending-meals/${selectedMeal._id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        // Remove from state
-        setPendingMeals(
-          pendingMeals.filter((meal) => meal._id !== selectedMeal._id)
-        );
+    const url =
+      activeTab === "pending"
+        ? `http://localhost:5001/api/admin/pending-meals/${selectedMeal._id}`
+        : `http://localhost:5001/api/admin/meal/${selectedMeal._id}`;
 
-        // Close modal
-        closeNutritionModal();
-      } else {
-        await axios.delete(
-          `http://localhost:5001/api/admin/meal/${selectedMeal._id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+    try {
+      const res=await axios.delete(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (activeTab === "pending") {
+        setPendingMeals((prev) =>
+          prev.filter((meal) => meal._id !== selectedMeal._id)
         );
+      } else {
         setAllMeals((prev) =>
           prev.filter((meal) => meal._id !== selectedMeal._id)
         );
-        closeNutritionModal();
       }
+      console.log("Meal deleted successfully:", res.data);
+      toast.success(res.data.message || "Meal deleted successfully");
+      closeNutritionModal();
     } catch (err) {
-      console.error("Error deleting pending meal:", err);
-      alert("Failed to delete pending meal");
+      console.error("Error deleting meal:", err);
+      toast.error(err.response?.data?.message || "Failed to delete meal");
     }
   };
+
   const handleSaveToSystem = async () => {
     const token = localStorage.getItem("token");
     try {
-      await axios.post(
+      const res = await axios.post(
         `http://localhost:5001/api/admin/pending-meals/${selectedMeal._id}`,
-        {}, // empty body
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Remove from pendingMeals
       setPendingMeals((prev) =>
         prev.filter((meal) => meal._id !== selectedMeal._id)
       );
+      console.log("Meal saved to system:", res.data);
+      toast.success(res.data.message || "Meal saved to system");
       closeNutritionModal();
-      alert("Meal saved to system successfully");
     } catch (err) {
       console.error("Failed to save meal to system:", err);
-      alert("Failed to save meal to system");
+      toast.error(err.response?.data?.message || "Failed to save meal to system");
     }
   };
 
@@ -119,29 +115,28 @@ export default function AdminShowMeals() {
       <button className="toggle-btn" onClick={toggleSidebar}>
         &#8942;
       </button>
-      {sidebarVisible && (
+
+      {adminData && (
         <AdminSidebar visible={sidebarVisible} AdminData={adminData} />
       )}
 
       <ShowMeal
         activeTab={activeTab}
-        sidebarVisible={sidebarVisible}
         setActiveTab={setActiveTab}
         filteredMeals={filteredMeals}
+        sidebarVisible={sidebarVisible}
         handleMealClick={handleMealClick}
         tab={tab}
       />
-      {/* Nutrition Modal */}
+
       {showNutritionModal && selectedMeal && (
-        <>
-          <MealModal
-            selectedMeal={selectedMeal}
-            closeNutritionModal={closeNutritionModal}
-            handleSaveToSystem={handleSaveToSystem}
-            handleDeleteMeal={handleDeleteMeal}
-            activeTab={activeTab}
-          />
-        </>
+        <MealModal
+          selectedMeal={selectedMeal}
+          closeNutritionModal={closeNutritionModal}
+          handleDeleteMeal={handleDeleteMeal}
+          handleSaveToSystem={handleSaveToSystem}
+          activeTab={activeTab}
+        />
       )}
     </div>
   );

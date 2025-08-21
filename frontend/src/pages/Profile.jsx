@@ -33,10 +33,6 @@ export default function ProfilePage() {
   }, [navigate]);
 
   const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/signin');
-  };
   const handleChangePassword = () => navigate('/changepassword');
 
   const handleChange = e => {

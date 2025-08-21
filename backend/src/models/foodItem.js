@@ -27,7 +27,17 @@ const FoodItemSchema = new mongoose.Schema({
     type: String,
     enum: ['protein', 'carb', 'fat', 'vegetable', 'fruit', 'nut', 'dairy', 'other'],
     default: 'other',
-  }
+  },
+  measuringUnit:{
+    type: String,
+    enum: ['ml','gm','pc'],
+    default: 'gm',
+  },
+  totalunitweight:{
+    type:Number,
+    required:true,
+    default:100,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('fooditem', FoodItemSchema);

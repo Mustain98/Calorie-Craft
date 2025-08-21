@@ -44,7 +44,7 @@ const deleteFoodItem = async (req, res) => {
 
 // Create a new food item
 const createFoodItem = async (req, res) => {
-  const { name, calories, protein, carbs, fat, category } = req.body;
+  const { name, calories, protein, carbs, fat, category,measuringUnit,totalunitweight } = req.body;
 
   try {
     const existing = await foodItem.findOne({ name });
@@ -53,7 +53,7 @@ const createFoodItem = async (req, res) => {
     }
 
     const newItem = await foodItem.create({
-      name, calories, protein, carbs, fat, category
+      name, calories, protein, carbs, fat, category,measuringUnit,totalunitweight
     });
 
     res.status(201).json(newItem);

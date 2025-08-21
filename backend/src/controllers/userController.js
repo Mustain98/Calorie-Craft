@@ -1,10 +1,10 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-const calculateMealMacros=require('../utils/calculateMealMacros');
-const Meal = require('../models/meal');         
-const FoodItem = require('../models/foodItem'); 
+const Meal = require('../models/meal'); 
+const {prepareMealData}=require('../service/mealService');    
 const pendingMeal=require('../models/pendingMeal');
 const {cloudinary}=require('../utils/cloudinary');
+const {isDuplicateInMyMeals,isDuplicateInPendingMeals} = require('../utils/isDuplicateMeal');
 // Generate JWT
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -89,61 +89,25 @@ const updateUser = async (req, res) => {
 const addMealToMyMeals = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name,description,foodItems,share } = req.body;
+    const mealData = await prepareMealData({ ...req.body, file: req.file });
 
-    let parsedItems = typeof foodItems === 'string' ? JSON.parse(foodItems) : foodItems;
+    // Check duplicates
+    const result = await isDuplicateInMyMeals(userId, mealData.name);
+    if (result.isDuplicate) return res.status(400).json({ error: 'Meal already exists' });
 
-    if (!Array.isArray(parsedItems) || parsedItems.length === 0) {
-      return res.status(400).json({ error: 'Invalid or missing food items' });
-    }
-
-    for (const item of parsedItems) {
-      if (!item.food || !item.quantity) {
-        return res.status(400).json({ error: 'Each food item must have a food ID and quantity' });
-      }
-    }
-
-    // Accept imageUrl from req.body (not just req.file)
-    const imageUrl = req.body.imageUrl || req.file?.path || '';
-    const imageId = req.file?.filename||'';
-    // Embed food names inside items (you can skip if you just store IDs)
-    const populatedItems = parsedItems.map(item => ({
-      food: item.food,
-      quantity: item.quantity
-    }));
-
-    // Calculate nutrition
-    const totals = await calculateMealMacros(parsedItems);
-
-    const newEmbeddedMeal = {
-      name,
-      description,
-      imageUrl,
-      imageId,
-      foodItems: populatedItems,
-      ...totals
-    };
-
-    // Save to user
+    // Push embedded meal
     const user = await User.findById(userId);
-    user.myMeals.push(newEmbeddedMeal);
+    user.myMeals.push(mealData);
     await user.save();
 
-    // Populate food names in embedded meal before returning
-    await user.populate('myMeals.foodItems.food', 'name');
-
-    const savedMeal = user.myMeals[user.myMeals.length - 1];
-    if (share) {
-      await addToPendingMeals(savedMeal._id, userId);
-    }
-
-    res.status(201).json({ message: 'Meal saved to your profile', meal: savedMeal });
-
+    res.status(201).json({ message: 'Meal saved to your profile', meal: user.myMeals[user.myMeals.length - 1] });
   } catch (err) {
-    console.error('Error adding meal:', err);
-    res.status(500).json({ error: 'Server error: failed to save meal' });
+    if (req.file?.filename) await cloudinary.uploader.destroy(req.file.filename);
+    console.log(err);
+    res.status(400).json({ error: err.message });
   }
 };
+
 
 
 // Delete meal from user's meals
@@ -219,9 +183,8 @@ const updatePassword =async (req,res) =>{
 // Controller to share a meal
 const shareMeal = async (req, res) => {
   try {
-    const { mealId } = req.params;
+    const mealId  = req.params;
     const userId = req.user._id;
-
     const result = await addToPendingMeals(mealId, userId);
     if (result.success) {
       return res.status(201).json({
@@ -240,11 +203,17 @@ const shareMeal = async (req, res) => {
 // Helper function to add a user's meal to PendingMeals
 const addToPendingMeals = async (mealId, userId) => {
   try {
+    
     const user = await User.findById(userId);
     if (!user) return { success: false, status: 404, message: 'User not found' };
 
     const meal = user.myMeals.id(mealId);
     if (!meal) return { success: false, status: 404, message: 'Meal not found in your saved meals.' };
+      const result = await isDuplicateInPendingMeals(userId, meal.name);
+
+    if (result.isDuplicate) {
+      return { success: false, status: 400, message: 'You have already shared a meal with this name.' };
+    };
 
     const newPending = new pendingMeal({
       name: meal.name,
@@ -255,6 +224,7 @@ const addToPendingMeals = async (mealId, userId) => {
         food: item.food,
         quantity: item.quantity
       })),
+      categories:meal.categories,
       submittedBy: userId
     });
 
@@ -267,6 +237,53 @@ const addToPendingMeals = async (mealId, userId) => {
   }
 };
 
+
+//show timed meal configuration
+const showTimedMealConfiguration =async (req,res)=>{
+  try{
+    const user =await User.findById(req.user.id);
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const timedMealConfiguration=user.timedMealConfig;
+
+    if(timedMealConfiguration){
+      return res.json({timedMealConfiguration});
+    }
+      return res.json({ message: 'No meal configuration found' });
+  }catch(err){
+    res.status(500).json({ error: 'Failed to fetch user meal configuration' });
+  }
+}
+// Update user timed meal configuration
+const updateTimedMealConfiguration = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const { timedMealConfig } = req.body;
+
+    if (!timedMealConfig || !Array.isArray(timedMealConfig)) {
+      return res.status(400).json({ error: "Invalid meal configuration data" });
+    }
+
+    user.timedMealConfig = timedMealConfig;
+
+    // Save user
+    await user.save();
+
+    res.json({
+      message: "Meal configuration updated successfully",
+    });
+  } catch (err) {
+    console.error("Error updating meal config:", err);
+    res.status(500).json({ error: "Failed to update meal configuration" });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -276,5 +293,7 @@ module.exports = {
   deleteMealFromMyMeals,
   showMeals,
   updatePassword,
-  shareMeal
+  shareMeal,
+  showTimedMealConfiguration,
+  updateTimedMealConfiguration
 };

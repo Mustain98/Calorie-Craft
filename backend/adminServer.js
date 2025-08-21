@@ -2,9 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const adminRoutes = require('./routes/admin');
-const mealRoute = require('./routes/meal');
-const foodItemRoute = require('./routes/fooditem');
+const adminRoutes = require('./src/routes/admin');
+const mealRoute = require('./src/routes/meal');
+const foodItemRoute = require('./src/routes/fooditem');
 
 
 const app = express();
