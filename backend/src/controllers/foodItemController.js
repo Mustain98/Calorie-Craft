@@ -11,21 +11,40 @@ const getAllFoodItems = async (req, res) => {
 };
 
 // Get a food item by its name (case‑insensitive exact match)
-const getFoodItemByName = async (req, res) => {
+// const getFoodItemByName = async (req, res) => {
+//   try {
+//     // Build a regex for an exact, case‑insensitive match
+//     const nameParam = req.params.name.trim();
+//     const regex = new RegExp(`^${nameParam}$`, 'i');
+
+//     const item = await foodItem.findOne({ name: regex });
+
+//     if (!item) {
+//       return res.status(404).json({ error: 'Food item not found' });
+//     }
+
+//     res.status(200).json(item); // contains the _id, name, macros etc.
+//   } catch (err) {
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// };
+
+
+//get fooditem by category
+const getFoodItemByCategory = async (req, res) => {
   try {
-    // Build a regex for an exact, case‑insensitive match
-    const nameParam = req.params.name.trim();
-    const regex = new RegExp(`^${nameParam}$`, 'i');
+    const categoryParam = req.params.category.trim(); // use "category", not "name"
+    const regex = new RegExp(`^${categoryParam}$`, "i"); // case-insensitive exact match
 
-    const item = await foodItem.findOne({ name: regex });
+    const items = await foodItem.find({ category: regex }); // return all matching items
 
-    if (!item) {
-      return res.status(404).json({ error: 'Food item not found' });
+    if (!items || items.length === 0) {
+      return res.status(404).json({ error: "No food items found for this category" });
     }
 
-    res.status(200).json(item); // contains the _id, name, macros etc.
+    res.status(200).json(items);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -70,7 +89,7 @@ const searchFoodItems = async (req, res) => {
       return res.status(400).json({ error: 'Missing search query' });
     }
 
-    const regex = new RegExp(query.trim(), 'i'); // case-insensitive partial match
+    const regex = new RegExp(query.trim(), 'i'); 
 
     const items = await foodItem.find({ name: regex }).limit(10).sort({ name: 1 });
 
@@ -83,8 +102,8 @@ const searchFoodItems = async (req, res) => {
 
 module.exports = {
   getAllFoodItems,
-  getFoodItemByName,
   deleteFoodItem,
   createFoodItem,
-  searchFoodItems
+  searchFoodItems,
+  getFoodItemByCategory
 };

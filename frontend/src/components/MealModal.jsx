@@ -37,7 +37,9 @@ export default function MealModal({
             alt={selectedMeal.name}
             className="w-40 h-40 rounded-lg object-cover shadow-md"
           />
-          <h2 className="text-2xl font-semibold text-gray-800">{selectedMeal.name}</h2>
+          <h2 className="text-2xl font-semibold text-gray-800">
+            {selectedMeal.name}
+          </h2>
         </div>
 
         {/* Ingredients Section */}
@@ -52,7 +54,10 @@ export default function MealModal({
                     key={idx}
                     className="text-gray-700 text-base border-b border-gray-100 py-1"
                   >
-                    {item.quantity}× {item.food.name}
+                    {item.food.measuringUnit === "pcs" ||
+                    item.food.measuringUnit === "tbsp"
+                      ? `${item.quantity} ${item.food.measuringUnit} ${item.food.name}`
+                      : `${item.quantity}×${item.food.totalunitweight}${item.food.measuringUnit} ${item.food.name}`}
                   </div>
                 ))
               : selectedMeal.ingredients?.map((ing, i) => (
