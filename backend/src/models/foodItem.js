@@ -30,7 +30,7 @@ const FoodItemSchema = new mongoose.Schema({
   },
   measuringUnit:{
     type: String,
-    enum: ['ml','gm','pc'],
+    enum: ['ml','gm','pcs','tbsp'],
     default: 'gm',
   },
   totalunitweight:{
