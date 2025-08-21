@@ -1,51 +1,28 @@
+const { json } = require('express');
 const Meal = require('../models/meal');
+const {prepareMealData}=require('../service/mealService');
+const foodItem=require('../models/foodItem')
 const {cloudinary}=require('../utils/cloudinary');
 
 // @desc    Create a new meal
 const createMeal = async (req, res) => {
-  const imageUrl = req.file?.path || '';
-  const imageId = req.file?.filename || ''; // filename is the public_id
-
   try {
-    const { name, description } = req.body;
-    let foodItems = req.body.foodItems;
-
-    if (typeof foodItems === 'string') {
-      try {
-        foodItems = JSON.parse(foodItems);
-      } catch (err) {
-        if (imageId) await cloudinary.uploader.destroy(imageId);
-        return res.status(400).json({ error: 'Invalid JSON format for foodItems' });
-      }
-    }
-
-    if (!name || !Array.isArray(foodItems) || foodItems.length === 0) {
-      if (imageId) await cloudinary.uploader.destroy(imageId);
-      return res.status(400).json({ error: 'Invalid meal data' });
-    }
-
-    const newMeal = new Meal({
-      name,
-      description,
-      imageUrl,
-      imageId,
-      foodItems
-    });
-
+    const mealData = await prepareMealData({ ...req.body, file: req.file });
+    console.log(mealData);
+    const newMeal = new Meal(mealData);
     await newMeal.save();
     res.status(201).json(newMeal);
   } catch (err) {
-    if (imageId) await cloudinary.uploader.destroy(imageId);
-    res.status(500).json({ error: 'Failed to create meal', details: err.message });
+    if (req.file?.filename) await cloudinary.uploader.destroy(req.file.filename);
+    res.status(400).json({ error: err.message });
   }
 };
-
 
 
 // @desc    Update an existing meal
 const updateMeal = async (req, res) => {
   try {
-    const { name, imageUrl, foodItems } = req.body;
+    const { name, description, foodItems } = req.body;
 
     const meal = await Meal.findById(req.params.id);
     if (!meal) {
@@ -53,10 +30,25 @@ const updateMeal = async (req, res) => {
     }
 
     if (name) meal.name = name;
-    if (imageUrl !== undefined) meal.imageUrl = imageUrl;
-    if (imageId !== undefined) meal.imageId= imageId;
+    if (req.file) {
+      meal.imageUrl = req.file.path;
+      meal.imageId = req.file.filename;
+    }
+    if(description){
+      meal.description=description;
+    }
+    if (category) {
+    let parsedCategory = category;
+      if (typeof category === 'string') {
+        try {
+          parsedCategory = JSON.parse(category);
+        } catch {
+          parsedCategory = [category];
+        }
+      }
+      meal.categories = parsedCategory;
+    }
     if (Array.isArray(foodItems)) meal.foodItems = foodItems;
-
     await meal.save();
     res.status(200).json(meal);
   } catch (err) {
@@ -84,7 +76,7 @@ const deleteMeal = async (req, res) => {
   }
 };
 
-// (Optional) Get all meals
+//  Get all meals
 const getAllMeals = async (req, res) => {
   try {
     const meals = await Meal.find().populate('foodItems.food');
@@ -94,7 +86,7 @@ const getAllMeals = async (req, res) => {
   }
 };
 
-// (Optional) Get single meal
+//  Get single meal
 const getMealById = async (req, res) => {
   try {
     const meal = await Meal.findById(req.params.id).populate('foodItems.food');

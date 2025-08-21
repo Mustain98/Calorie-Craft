@@ -24,5 +24,28 @@ const storage = new CloudinaryStorage({
 
 // Multer Upload Middleware
 const parser = multer({ storage });
+async function cloneImage(imageUrl, imageId) {
+  try {
+    // Prefer given URL
+    let sourceUrl = imageUrl;
+    if (!sourceUrl && imageId) {
+      sourceUrl = cloudinary.url(imageId, { secure: true });
+    }
 
-module.exports = { cloudinary, parser };
+    if (!sourceUrl) return null;
+
+    const uploaded = await cloudinary.uploader.upload(sourceUrl, {
+      folder: 'meal-images',
+      public_id: `meal-${Date.now()}`,
+      overwrite: false,
+      resource_type: 'image',
+    });
+
+    return { url: uploaded.secure_url, id: uploaded.public_id };
+  } catch (err) {
+    console.warn('Image clone failed:', err.message);
+    return null;
+  }
+}
+
+module.exports = { cloudinary, parser,cloneImage };

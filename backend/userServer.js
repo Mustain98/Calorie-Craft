@@ -3,12 +3,12 @@ const express = require('express');
 const cors=require('cors');
 const mongoose = require('mongoose');
 //routes
-const foodItemRoute = require('./routes/fooditem');
-const mealRoute=require('./routes/meal');
-const timedMealRoute=require('./routes/timedMeal');
-const dayPlanRoute=require('./routes/dayPlan');
-const weekPlanRoute=require('./routes/weekPlan');
-const userRoute=require('./routes/user');
+const foodItemRoute = require('./src/routes/fooditem');
+const mealRoute=require('./src/routes/meal');
+const timedMealRoute=require('./src/routes/timedMeal');
+const dayPlanRoute=require('./src/routes/dayPlan');
+const weekPlanRoute=require('./src/routes/weekPlan');
+const userRoute=require('./src/routes/user');
 
 const app = express();
 const PORT = process.env.PORT;

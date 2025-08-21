@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const TimedMealSchema = new mongoose.Schema({
   name: {
-    type: String, // e.g., 'breakfast', 'lunch', 'snack1'
+    type: String, 
     required: true,
   },
   meals: [

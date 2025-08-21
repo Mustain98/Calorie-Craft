@@ -8,7 +8,9 @@ const {
   deleteMealFromMyMeals,
   showMeals,
   updatePassword,
-  shareMeal
+  shareMeal,
+  showTimedMealConfiguration,
+  updateTimedMealConfiguration
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const {parser} =require('../utils/cloudinary');
@@ -23,4 +25,6 @@ router.delete('/me/myMeals/:id',protect,deleteMealFromMyMeals);
 router.get('/me/myMeals/',protect,showMeals);
 router.put('/me/password',protect,updatePassword);
 router.post('/me/shareMeal/:id',protect,shareMeal);
+router.get('/me/myMealPlanSetting',protect,showTimedMealConfiguration);
+router.put('/me/updateMealPlanSetting',protect,updateTimedMealConfiguration)
 module.exports = router;
