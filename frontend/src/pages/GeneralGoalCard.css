@@ -1,0 +1,30 @@
+.goal-selector-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background-color: #d0d0d0; /* light gray container */
+  border-radius: 10px;
+  width: 200px; /* adjust as needed */
+  margin: 0 auto; /* center horizontally if needed */
+}
+
+.goal-btn {
+  padding: 10px 15px;
+  background-color: #8bc34a; /* green */
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.goal-btn:hover {
+  transform: scale(1.05);
+  background-color: #7cb342; /* slightly darker green on hover */
+}
+
+.goal-btn.selected {
+  background-color: #558b2f; /* darker green when selected */
+}

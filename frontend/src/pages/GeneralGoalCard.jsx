@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import GeneralGoalCard from "./GeneralGoalCard";  // your general goals card
-import ExactGoalCard from "./ExactGoalCard";      // your exact goals card
+import GoalSelector from "./GeneralGoalCard"; // general goals
+import GoalCard from "./ExactGoalCard";       // exact goals
 import "./GoalSetting.css";
 
 const GoalSetting = () => {
@@ -18,13 +18,17 @@ const GoalSetting = () => {
         <div className="toggle-btn-wrapper">
           <button
             onClick={() => setSelectedGoal("general")}
-            className={`toggle-btn ${selectedGoal === "general" ? "active" : ""}`}
+            className={`toggle-btn ${
+              selectedGoal === "general" ? "active" : ""
+            }`}
           >
             General goal
           </button>
           <button
             onClick={() => setSelectedGoal("exact")}
-            className={`toggle-btn ${selectedGoal === "exact" ? "active" : ""}`}
+            className={`toggle-btn ${
+              selectedGoal === "exact" ? "active" : ""
+            }`}
           >
             Exact goal
           </button>
@@ -36,7 +40,7 @@ const GoalSetting = () => {
 
       {/* Card Section */}
       <div className="goal-card-section">
-        {selectedGoal === "general" ? <GeneralGoalCard /> : <ExactGoalCard />}
+        {selectedGoal === "general" ? <GoalSelector /> : <GoalCard />}
       </div>
     </div>
   );
