@@ -1,45 +1,10 @@
-import React, { useState } from "react";
-import GeneralGoalCard from "./GeneralGoalCard";  // your general goals card
-import ExactGoalCard from "./ExactGoalCard";      // your exact goals card
-import "./GoalSetting.css";
+import React from 'react';
 
-const GoalSetting = () => {
-  const [selectedGoal, setSelectedGoal] = useState("general"); // 'general' or 'exact'
-
+export default function GoalSetting() {
   return (
-    <div className="set-goal-page-container">
-      {/* SET GOAL Header */}
-      <div className="set-goal-header">
-        <button className="set-goal-main-btn">SET GOAL</button>
-      </div>
-
-      {/* Toggle Buttons */}
-      <div className="toggle-btn-group">
-        <div className="toggle-btn-wrapper">
-          <button
-            onClick={() => setSelectedGoal("general")}
-            className={`toggle-btn ${selectedGoal === "general" ? "active" : ""}`}
-          >
-            General goal
-          </button>
-          <button
-            onClick={() => setSelectedGoal("exact")}
-            className={`toggle-btn ${selectedGoal === "exact" ? "active" : ""}`}
-          >
-            Exact goal
-          </button>
-        </div>
-      </div>
-
-      {/* Choose Label */}
-      <div className="choose-label">Choose</div>
-
-      {/* Card Section */}
-      <div className="goal-card-section">
-        {selectedGoal === "general" ? <GeneralGoalCard /> : <ExactGoalCard />}
-      </div>
+    <div style={{ padding: "40px" }}>
+      <h2>Goal Setting</h2>
+      <p>Feature under development</p>
     </div>
   );
-};
-
-export default GoalSetting;
+}
