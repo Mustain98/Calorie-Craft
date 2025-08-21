@@ -175,9 +175,9 @@ export default function AddIngreidentPage() {
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="">Select Unit</option>
-                {['ml','gm','pc'].map(unit => (
+                {['ml','gm','pcs','tbsp'].map(unit => (
                   <option key={unit} value={unit}>
-                    {unit.toUpperCase()}
+                    {unit}
                   </option>
                 ))}
               </select>

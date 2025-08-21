@@ -1,0 +1,111 @@
+.profile-page {
+  display: flex;
+  font-family: 'Segoe UI', sans-serif;
+  position: relative;
+  min-height: 100vh;
+}
+
+.toggle-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  width: 45px;
+  height: 45px;
+  background-color: #99d209;
+  border: none;
+  border-radius: 50%; /* Makes it round */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease;
+}
+
+.toggle-btn:hover {
+  background-color: #85b800;
+}
+
+/* Container for vertical bars */
+.toggle-btn .bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toggle-btn .bar {
+  width: 4px;
+  height: 18px;
+  background-color: white;
+  border-radius: 2px;
+}
+/* Main Content */
+.profile-main {
+  margin-left: 250px;
+  flex: 1;
+  min-height: 100vh;
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: margin-left 0.3s ease;
+}
+
+.profile-main.sidebar-hidden {
+  margin-left: 0;
+}
+
+.profile-form-container {
+  width: 100%;
+  max-width: 600px;
+  padding: 24px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-form label {
+  font-size: 14px;
+  margin-bottom: -8px;
+  color: #444;
+  font-weight: 500;
+}
+
+.profile-form input {
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: white;
+  color: #333;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.update-btn,
+.change-password-btn {
+  background-color: #99d209;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  font-size: 15px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.update-btn:hover,
+.change-password-btn:hover {
+  background-color: #85b800;
+}

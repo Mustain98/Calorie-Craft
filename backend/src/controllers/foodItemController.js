@@ -31,23 +31,23 @@ const getAllFoodItems = async (req, res) => {
 
 
 //get fooditem by category
-const getFoodItemByCategory=async(req,res)=>{
+const getFoodItemByCategory = async (req, res) => {
   try {
-    // Build a regex for an exact, case‑insensitive match
-    const nameParam = req.params.name.trim();
-    const regex = new RegExp(`^${nameParam}$`, 'i');
+    const categoryParam = req.params.category.trim(); // use "category", not "name"
+    const regex = new RegExp(`^${categoryParam}$`, "i"); // case-insensitive exact match
 
-    const item = await foodItem.findOne({ category: regex });
+    const items = await foodItem.find({ category: regex }); // return all matching items
 
-    if (!item) {
-      return res.status(404).json({ error: 'Food item not found' });
+    if (!items || items.length === 0) {
+      return res.status(404).json({ error: "No food items found for this category" });
     }
 
-    res.status(200).json(item); // contains the _id, name, macros etc.
+    res.status(200).json(items);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
-}
+};
+
 // Delete a food item by ID
 const deleteFoodItem = async (req, res) => {
   try {
