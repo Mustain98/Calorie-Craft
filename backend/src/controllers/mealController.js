@@ -8,7 +8,6 @@ const {cloudinary}=require('../utils/cloudinary');
 const createMeal = async (req, res) => {
   try {
     const mealData = await prepareMealData({ ...req.body, file: req.file });
-    console.log(mealData);
     const newMeal = new Meal(mealData);
     await newMeal.save();
     res.status(201).json(newMeal);

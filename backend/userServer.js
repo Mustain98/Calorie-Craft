@@ -24,7 +24,7 @@ app.use('/api/fooditem', foodItemRoute);
 app.use('/api/meal',mealRoute);
 app.use('/api/timedMeal',timedMealRoute);
 app.use('/api/dayPlan',dayPlanRoute);
-app.use('/api/weekPlan',weekPlanRoute);
+app.use('/api/weekPlans',weekPlanRoute);
 app.use('/api/users',userRoute);
 
 

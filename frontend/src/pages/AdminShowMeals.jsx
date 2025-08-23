@@ -126,7 +126,10 @@ export default function AdminShowMeals() {
         filteredMeals={filteredMeals}
         sidebarVisible={sidebarVisible}
         handleMealClick={handleMealClick}
-        tab={tab}
+        tab="pending,system"
+        baseUrl="http://localhost:5001/api"
+        authToken={localStorage.getItem("token")}
+        filterTabs={["system"]}
       />
 
       {showNutritionModal && selectedMeal && (
