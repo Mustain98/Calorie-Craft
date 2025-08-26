@@ -2,6 +2,7 @@ const express = require('express');
 const {
   getAllFoodItems,
   getFoodItemByName,
+  getFoodItemByCategory,
   deleteFoodItem,
   createFoodItem,
   searchFoodItems
@@ -10,10 +11,11 @@ const {
 const router = express.Router();
 
 // Route setup
-router.get('/search', searchFoodItems);
-router.get('/', getAllFoodItems);
-router.get('/:name', getFoodItemByName);
-router.delete('/:id', deleteFoodItem);
-router.post('/', createFoodItem);
+router.get('/search', searchFoodItems);               // /fooditems/search?q=apple
+router.get('/', getAllFoodItems);                     // /fooditems/
+router.get('/category/:category', getFoodItemByCategory); // /fooditems/category/Fruit
+router.get('/name/:name', getFoodItemByName);         // /fooditems/name/Apple
+router.delete('/:id', deleteFoodItem);                // /fooditems/123
+router.post('/', createFoodItem);                     // /fooditems/
 
 module.exports = router;

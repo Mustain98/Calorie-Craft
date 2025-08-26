@@ -10,33 +10,31 @@ const getAllFoodItems = async (req, res) => {
   }
 };
 
-// Get a food item by its name (case‑insensitive exact match)
-// const getFoodItemByName = async (req, res) => {
-//   try {
-//     // Build a regex for an exact, case‑insensitive match
-//     const nameParam = req.params.name.trim();
-//     const regex = new RegExp(`^${nameParam}$`, 'i');
+// Get a food item by its name (case-insensitive exact match)
+const getFoodItemByName = async (req, res) => {
+  try {
+    const nameParam = req.params.name.trim();
+    const regex = new RegExp(`^${nameParam}$`, 'i'); // exact case-insensitive
 
-//     const item = await foodItem.findOne({ name: regex });
+    const item = await foodItem.findOne({ name: regex });
 
-//     if (!item) {
-//       return res.status(404).json({ error: 'Food item not found' });
-//     }
+    if (!item) {
+      return res.status(404).json({ error: 'Food item not found' });
+    }
 
-//     res.status(200).json(item); // contains the _id, name, macros etc.
-//   } catch (err) {
-//     res.status(500).json({ error: 'Server error' });
-//   }
-// };
+    res.status(200).json(item);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
 
-
-//get fooditem by category
+// Get food items by category
 const getFoodItemByCategory = async (req, res) => {
   try {
-    const categoryParam = req.params.category.trim(); // use "category", not "name"
-    const regex = new RegExp(`^${categoryParam}$`, "i"); // case-insensitive exact match
+    const categoryParam = req.params.category.trim();
+    const regex = new RegExp(`^${categoryParam}$`, "i");
 
-    const items = await foodItem.find({ category: regex }); // return all matching items
+    const items = await foodItem.find({ category: regex });
 
     if (!items || items.length === 0) {
       return res.status(404).json({ error: "No food items found for this category" });
@@ -63,7 +61,7 @@ const deleteFoodItem = async (req, res) => {
 
 // Create a new food item
 const createFoodItem = async (req, res) => {
-  const { name, calories, protein, carbs, fat, category,measuringUnit,totalunitweight } = req.body;
+  const { name, calories, protein, carbs, fat, category, measuringUnit, totalunitweight } = req.body;
 
   try {
     const existing = await foodItem.findOne({ name });
@@ -72,7 +70,7 @@ const createFoodItem = async (req, res) => {
     }
 
     const newItem = await foodItem.create({
-      name, calories, protein, carbs, fat, category,measuringUnit,totalunitweight
+      name, calories, protein, carbs, fat, category, measuringUnit, totalunitweight
     });
 
     res.status(201).json(newItem);
@@ -90,7 +88,6 @@ const searchFoodItems = async (req, res) => {
     }
 
     const regex = new RegExp(query.trim(), 'i'); 
-
     const items = await foodItem.find({ name: regex }).limit(10).sort({ name: 1 });
 
     res.status(200).json(items);
@@ -99,11 +96,11 @@ const searchFoodItems = async (req, res) => {
   }
 };
 
-
 module.exports = {
   getAllFoodItems,
+  getFoodItemByName,
+  getFoodItemByCategory,
   deleteFoodItem,
   createFoodItem,
   searchFoodItems,
-  getFoodItemByCategory
 };
