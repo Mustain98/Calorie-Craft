@@ -1,188 +1,487 @@
 // backend/src/controllers/timedMealController.js
+const mongoose = require('mongoose');
 const TimedMeal = require('../models/timedMeal');
-const User = require('../models/user');
+const UserMeal = require('../models/userMeal');
+const Meal     = require('../models/meal');
+const User     = require('../models/user');
 
-const STEP = (() => {
-  const raw = process.env.UNIT_PORTION_FACTOR || process.env.unitPortionFactor;
-  const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? n : 0.25;
-})();
+const {
+  STEP,
+  planCost,
+  calcDemand,
+  withinTolerance,
+} = require('../service/nutritionCost');
 
-const roundToStep = (q) => {
-  const base = Number(q ?? STEP);
-  const rounded = Math.max(STEP, Math.round(base / STEP) * STEP);
-  return Number(rounded.toFixed(2));
-};
+const isObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+const r2 = (v) => Math.round((Number(v) + Number.EPSILON) * 100) / 100;
 
-const num = (x, d = 0) => (Number.isFinite(Number(x)) ? Number(x) : d);
+// env knobs used here
+const GLOBAL_MAX_FACTOR = Math.max(1, Number(process.env.REC_GLOBAL_MAX_FACTOR || 6));
+const TOL_PCT = Math.max(0, Math.min(1, Number(process.env.REC_TOLERANCE_PCT || 0.10)));
 
-// normalize ONE item (system or user snapshot)
-async function normalizeItemFromPayload(raw, userId) {
-  if (!raw || typeof raw !== 'object') return null;
-  const quantity = roundToStep(raw.quantity);
+// DEEP populate: include nested foodItems.food for both system and user meals
+const populateFull = [
+  { path: 'choosenCombo.meals.meal',     populate: { path: 'foodItems.food' } },
+  { path: 'choosenCombo.meals.userMeal', populate: { path: 'foodItems.food' } },
+  { path: 'mealCombos.meals.meal',       populate: { path: 'foodItems.food' } },
+  { path: 'mealCombos.meals.userMeal',   populate: { path: 'foodItems.food' } },
+];
 
-  // user meal snapshot path
-  if (raw.source === 'user' || raw.userMealId) {
-    const u = await User.findById(userId).select('myMeals').lean();
-    if (!u) throw new Error('User not found for user meal item');
-    const m = (u.myMeals || []).find(mm => String(mm._id) === String(raw.userMealId));
-    if (!m) throw new Error('userMealId not found in your myMeals');
-
-    return {
-      source: 'user',
-      user: userId,
-      userMealId: m._id,
-      quantity,
-      name: m.name,
-      portionSize: num(m.portionSize, 0),
-      totalCalories: num(m.totalCalories, 0),
-      totalProtein:  num(m.totalProtein, 0),
-      totalCarbs:    num(m.totalCarbs, 0),
-      totalFat:      num(m.totalFat, 0),
-    };
+function ensureOwner(doc, req) {
+  if (!doc) return;
+  if (req?.user?.id && String(doc.user) !== String(req.user.id)) {
+    const err = new Error('Forbidden: not your timed meal');
+    err.status = 403;
+    throw err;
   }
-
-  // system meal path
-  if (!raw.meal) throw new Error('Missing meal id for system item');
-  return { source: 'system', meal: raw.meal, quantity };
 }
 
-async function normalizeComboFromPayload(combo, userId) {
-  if (!combo || typeof combo !== 'object') return null;
-  const items = Array.isArray(combo.meals) ? combo.meals : [];
-  const normMeals = await Promise.all(items.map(it => normalizeItemFromPayload(it, userId)));
-  return { meals: normMeals.filter(Boolean), cost: num(combo.cost, 0) };
+function normalizeEmbeddedItem(raw) {
+  const item = {
+    source: raw?.source === 'user' ? 'user' : 'system',
+    quantity: Number.isFinite(Number(raw?.quantity)) ? Math.max(0.25, Number(raw.quantity)) : 1,
+  };
+  if (raw?.userMeal && isObjectId(raw.userMeal)) {
+    item.userMeal = raw.userMeal; item.source = 'user';
+  } else if (raw?.meal && isObjectId(raw.meal)) {
+    item.meal = raw.meal; item.source = 'system';
+  } else {
+    return null;
+  }
+  return item;
 }
 
-function pickMinCostCombo(arr = []) {
-  if (!arr.length) return null;
-  return arr.reduce((best, x) => (num(x?.cost, Infinity) < num(best?.cost, Infinity) ? x : best));
+// ---- helper: extract macros from (userMeal|meal) doc
+function macrosFromDoc(doc = {}) {
+  return {
+    grams:    Number(doc.portionSize   || 0),
+    calories: Number(doc.totalCalories || 0),
+    protein:  Number(doc.totalProtein  || 0),
+    carbs:    Number(doc.totalCarbs    || 0),
+    fats:     Number(doc.totalFat      || 0),
+  };
 }
 
-/* ---------------- CRUD ---------------- */
+// ---- helper: compute current chosen totals from populated doc
+function chosenTotals(tm) {
+  let c = 0, p = 0, cb = 0, f = 0, g = 0;
+  const items = tm?.choosenCombo?.meals || [];
+  for (const it of items) {
+    const qty = Number.isFinite(Number(it?.quantity)) ? Number(it.quantity) : 1;
+    const base = it?.userMeal || it?.meal;
+    if (!base) continue;
+    const m = macrosFromDoc(base);
+    g += m.grams    * qty;
+    c += m.calories * qty;
+    p += m.protein  * qty;
+    cb+= m.carbs    * qty;
+    f += m.fats     * qty;
+  }
+  return { grams: r2(g), calories: r2(c), protein: r2(p), carbs: r2(cb), fats: r2(f) };
+}
 
-exports.createTimedMeal = async (req, res) => {
+// ---- helper: compute max factor so THIS meal alone could meet remaining demand
+function maxFactorToMeetRemaining(mealDoc, remaining, cap = GLOBAL_MAX_FACTOR) {
+  const m = macrosFromDoc(mealDoc);
+  // build positive ratios only (where remaining > 0 and meal macro > 0)
+  const ratios = [];
+  if (m.calories > 0 && remaining.calories > 0) ratios.push(remaining.calories / m.calories);
+  if (m.protein  > 0 && remaining.protein  > 0) ratios.push(remaining.protein  / m.protein);
+  if (m.fats     > 0 && remaining.fats     > 0) ratios.push(remaining.fats     / m.fats);
+  if (m.carbs    > 0 && remaining.carbs    > 0) ratios.push(remaining.carbs    / m.carbs);
+
+  if (!ratios.length) return STEP; // nothing to fill or meal can't help → minimal step
+  const fMax = Math.max(...ratios);
+  if (!Number.isFinite(fMax) || fMax <= 0) return STEP;
+  return Math.max(STEP, Math.min(cap, Number(fMax.toFixed(6))));
+}
+
+/* ----------------------------- CONTROLLERS ----------------------------- */
+
+// POST /api/timed-meals
+async function create(req, res) {
   try {
-    const { name, type, mealCombos = [], choosenCombo } = req.body;
+    const userId = req.user?.id || req.body.user;
+    if (!userId || !isObjectId(userId)) return res.status(400).json({ error: 'Missing/invalid user id' });
+
+    const { name, type, weekPlan, choosenCombo, mealCombos } = req.body;
     if (!name || !type) return res.status(400).json({ error: 'name and type are required' });
 
-    const combos = (await Promise.all(mealCombos.map(c => normalizeComboFromPayload(c, req.user.id))))
-      .filter(Boolean);
+    const doc = new TimedMeal({
+      name,
+      type,
+      user: userId,
+      weekPlan: isObjectId(weekPlan) ? weekPlan : undefined,
+      choosenCombo: undefined,
+      mealCombos: [],
+    });
 
-    let chosen = null;
-    if (choosenCombo) chosen = await normalizeComboFromPayload(choosenCombo, req.user.id);
-    if (!chosen) chosen = pickMinCostCombo(combos) || null;
+    if (mealCombos && Array.isArray(mealCombos)) {
+      doc.mealCombos = mealCombos.map(c => ({
+        cost: Number.isFinite(Number(c?.cost)) ? Number(c.cost) : 0,
+        meals: Array.isArray(c?.meals) ? c.meals.map(normalizeEmbeddedItem).filter(Boolean) : [],
+      }));
+    }
 
-    const doc = new TimedMeal({ name, type, mealCombos: combos, choosenCombo: chosen });
+    if (choosenCombo && typeof choosenCombo === 'object') {
+      doc.choosenCombo = {
+        cost: Number.isFinite(Number(choosenCombo?.cost)) ? Number(choosenCombo.cost) : 0,
+        meals: Array.isArray(choosenCombo?.meals) ? choosenCombo.meals.map(normalizeEmbeddedItem).filter(Boolean) : [],
+      };
+    }
+
     await doc.save();
-
-    const populated = await TimedMeal.findById(doc._id)
-      .populate('mealCombos.meals.meal')
-      .populate('choosenCombo.meals.meal');
-
-    return res.status(201).json(populated);
+    await doc.populate(populateFull);
+    return res.status(201).json({ message: 'Created', timedMeal: doc });
   } catch (err) {
-    console.error('[createTimedMeal] error:', err);
-    return res.status(500).json({ error: 'Failed to create timed meal', details: err.message });
+    console.error('[create timed meal]', err);
+    return res.status(err.status || 500).json({ error: err.message || 'Server error' });
   }
-};
+}
 
-exports.getAllTimedMeals = async (_req, res) => {
+// DELETE /api/timed-meals/:id
+async function remove(req, res) {
   try {
-    const timedMeals = await TimedMeal.find()
-      .populate('mealCombos.meals.meal')
-      .populate('choosenCombo.meals.meal');
-    return res.status(200).json(timedMeals);
+    const { id } = req.params;
+    if (!isObjectId(id)) return res.status(400).json({ error: 'Invalid id' });
+
+    const doc = await TimedMeal.findById(id);
+    if (!doc) return res.status(404).json({ error: 'Not found' });
+    ensureOwner(doc, req);
+
+    await doc.deleteOne();
+    return res.json({ message: 'Deleted' });
   } catch (err) {
-    console.error('[getAllTimedMeals] error:', err);
-    return res.status(500).json({ error: 'Failed to fetch timed meals', details: err.message });
+    console.error('[delete timed meal]', err);
+    return res.status(err.status || 500).json({ error: err.message || 'Server error' });
   }
-};
+}
 
-exports.getTimedMealById = async (req, res) => {
+// GET /api/timed-meals
+async function getAll(req, res) {
   try {
-    const timedMeal = await TimedMeal.findById(req.params.id)
-      .populate('mealCombos.meals.meal')
-      .populate('choosenCombo.meals.meal');
-    if (!timedMeal) return res.status(404).json({ error: 'Timed meal not found' });
-    return res.status(200).json(timedMeal);
+    const userId = req.user?.id || req.query.user;
+    if (!userId || !isObjectId(userId)) return res.status(400).json({ error: 'Missing/invalid user id' });
+
+    const { type, weekPlan, page = 1, limit = 20 } = req.query;
+    const q = { user: userId };
+    if (type) q.type = type;
+    if (weekPlan && isObjectId(weekPlan)) q.weekPlan = weekPlan;
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const [items, total] = await Promise.all([
+      TimedMeal.find(q)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit))
+        .populate(populateFull)
+        .lean(),
+      TimedMeal.countDocuments(q),
+    ]);
+
+    return res.json({
+      data: items,
+      page: Number(page),
+      limit: Number(limit),
+      total,
+    });
   } catch (err) {
-    console.error('[getTimedMealById] error:', err);
-    return res.status(500).json({ error: 'Failed to fetch timed meal', details: err.message });
+    console.error('[getAll timed meals]', err);
+    return res.status(500).json({ error: 'Server error' });
   }
-};
+}
 
-/**
- * Update supports:
- * - name/type changes
- * - Replace entire mealCombos
- * - addCombo / removeComboIndex / replaceComboAt
- * - choose choosenCombo by payload, min-cost, or by index
- * Payload items can be system or user snapshots.
- */
-exports.updateTimedMeal = async (req, res) => {
+// GET /api/timed-meals/:id
+async function getById(req, res) {
   try {
-    const {
-      name, type,
-      mealCombos, addCombo, removeComboIndex, replaceComboAt,
-      choosenCombo, chooseMinCost, chooseIndex
-    } = req.body;
+    const { id } = req.params;
+    if (!isObjectId(id)) return res.status(400).json({ error: 'Invalid id' });
 
-    const tm = await TimedMeal.findById(req.params.id);
-    if (!tm) return res.status(404).json({ error: 'Timed meal not found' });
+    const doc = await TimedMeal.findById(id).populate(populateFull);
+    if (!doc) return res.status(404).json({ error: 'Not found' });
+    ensureOwner(doc, req);
 
-    if (typeof name === 'string') tm.name = name;
-    if (typeof type === 'string') tm.type = type;
+    return res.json({ timedMeal: doc });
+  } catch (err) {
+    console.error('[getById timed meal]', err);
+    return res.status(err.status || 500).json({ error: err.message || 'Server error' });
+  }
+}
 
-    if (Array.isArray(mealCombos)) {
-      tm.mealCombos = (await Promise.all(mealCombos.map(c => normalizeComboFromPayload(c, req.user.id))))
-        .filter(Boolean);
+// PATCH /api/timed-meals/:id/add-user-meal
+async function addUserMealToChosenCombo(req, res) {
+  try {
+    const { id } = req.params;
+    const { userMealId, quantity } = req.body;
+
+    if (!isObjectId(id)) return res.status(400).json({ error: 'Invalid timed meal id' });
+    if (!isObjectId(userMealId)) return res.status(400).json({ error: 'Invalid userMealId' });
+
+    const um = await UserMeal.findById(userMealId).select('_id user');
+    if (!um) return res.status(404).json({ error: 'UserMeal not found' });
+    if (req?.user?.id && String(um.user) !== String(req.user.id)) {
+      return res.status(403).json({ error: 'Forbidden: UserMeal not yours' });
     }
-    if (addCombo) {
-      const n = await normalizeComboFromPayload(addCombo, req.user.id);
-      if (n) tm.mealCombos.push(n);
+
+    const doc = await TimedMeal.findById(id);
+    if (!doc) return res.status(404).json({ error: 'TimedMeal not found' });
+    ensureOwner(doc, req);
+
+    if (!doc.choosenCombo) doc.choosenCombo = { meals: [], cost: 0 };
+    if (!Array.isArray(doc.choosenCombo.meals)) doc.choosenCombo.meals = [];
+
+    const qty = Number.isFinite(Number(quantity)) ? Math.max(0.25, Number(quantity)) : 1;
+    doc.choosenCombo.meals.push({
+      source: 'user',
+      userMeal: userMealId,
+      quantity: qty,
+    });
+
+    await doc.save();
+    await doc.populate(populateFull);
+    return res.json({ message: 'Added', timedMeal: doc });
+  } catch (err) {
+    console.error('[addUserMealToChosenCombo]', err);
+    return res.status(err.status || 500).json({ error: err.message || 'Server error' });
+  }
+}
+
+// PUT /api/timed-meals/:id/replace-chosen
+async function replaceChosenComboByOtherCombo(req, res) {
+  try {
+    const { id } = req.params;
+    const { otherComboIndex, otherCombo } = req.body;
+
+    if (!isObjectId(id)) return res.status(400).json({ error: 'Invalid timed meal id' });
+
+    const doc = await TimedMeal.findById(id);
+    if (!doc) return res.status(404).json({ error: 'TimedMeal not found' });
+    ensureOwner(doc, req);
+
+    if (Number.isInteger(otherComboIndex)) {
+      const idx = Number(otherComboIndex);
+      if (!Array.isArray(doc.mealCombos) || idx < 0 || idx >= doc.mealCombos.length) {
+        return res.status(400).json({ error: 'otherComboIndex out of range' });
+      }
+      const src = doc.mealCombos[idx];
+      doc.choosenCombo = {
+        cost: Number.isFinite(Number(src?.cost)) ? Number(src.cost) : 0,
+        meals: (src?.meals || []).map(m => ({
+          source: m?.source === 'user' ? 'user' : 'system',
+          quantity: Number.isFinite(Number(m?.quantity)) ? Math.max(0.25, Number(m.quantity)) : 1,
+          meal: m?.meal,
+          userMeal: m?.userMeal,
+        })),
+      };
+    } else if (otherCombo && typeof otherCombo === 'object') {
+      const normalizedMeals = Array.isArray(otherCombo.meals)
+        ? otherCombo.meals.map(normalizeEmbeddedItem).filter(Boolean)
+        : [];
+      doc.choosenCombo = {
+        cost: Number.isFinite(Number(otherCombo?.cost)) ? Number(otherCombo.cost) : 0,
+        meals: normalizedMeals,
+      };
+    } else {
+      return res.status(400).json({ error: 'Provide either otherComboIndex or otherCombo' });
     }
-    if (Number.isInteger(removeComboIndex) && removeComboIndex >= 0 && removeComboIndex < tm.mealCombos.length) {
-      tm.mealCombos.splice(removeComboIndex, 1);
+
+    await doc.save();
+    await doc.populate(populateFull);
+    return res.json({ message: 'Replaced', timedMeal: doc });
+  } catch (err) {
+    console.error('[replaceChosenComboByOtherCombo]', err);
+    return res.status(err.status || 500).json({ error: err.message || 'Server error' });
+  }
+}
+
+// PATCH /api/timed-meals/:id/remove-chosen-meal
+// body: { itemIndex?: number, mealId?: string, removeAll?: boolean }
+async function removeMealFromChosenCombo(req, res) {
+  try {
+    const { id } = req.params;
+    const { itemIndex, mealId, removeAll } = req.body || {};
+
+    if (!isObjectId(id)) return res.status(400).json({ error: 'Invalid timed meal id' });
+
+    const doc = await TimedMeal.findById(id);
+    if (!doc) return res.status(404).json({ error: 'TimedMeal not found' });
+    ensureOwner(doc, req);
+
+    if (!doc.choosenCombo || !Array.isArray(doc.choosenCombo.meals) || doc.choosenCombo.meals.length === 0) {
+      return res.status(400).json({ error: 'No meals in chosen combo' });
     }
-    if (replaceComboAt && Number.isInteger(replaceComboAt.index) && replaceComboAt.combo) {
-      const idx = replaceComboAt.index;
-      if (idx >= 0 && idx < tm.mealCombos.length) {
-        const n = await normalizeComboFromPayload(replaceComboAt.combo, req.user.id);
-        if (n) tm.mealCombos[idx] = n;
+
+    const list = doc.choosenCombo.meals;
+
+    const sameId = (val, target) => {
+      if (!val) return false;
+      const v = typeof val === 'object' && val._id ? val._id : val;
+      return String(v) === String(target);
+    };
+
+    if (Number.isInteger(itemIndex)) {
+      const idx = Number(itemIndex);
+      if (idx < 0 || idx >= list.length) return res.status(400).json({ error: 'itemIndex out of range' });
+      list.splice(idx, 1);
+    } else {
+      if (!mealId || !isObjectId(mealId)) {
+        return res.status(400).json({ error: 'Provide a valid mealId (system meal _id or userMeal _id)' });
+      }
+      const target = String(mealId);
+
+      const matches = (m) => sameId(m.meal, target) || sameId(m.userMeal, target);
+
+      if (removeAll) {
+        const before = list.length;
+        doc.choosenCombo.meals = list.filter(m => !matches(m));
+        if (doc.choosenCombo.meals.length === before) {
+          return res.status(404).json({ error: 'Matching meal not found in chosen combo' });
+        }
+      } else {
+        const idx = list.findIndex(matches);
+        if (idx === -1) return res.status(404).json({ error: 'Matching meal not found in chosen combo' });
+        list.splice(idx, 1);
       }
     }
 
-    if (choosenCombo) {
-      const n = await normalizeComboFromPayload(choosenCombo, req.user.id);
-      if (n) tm.choosenCombo = n;
-    } else if (chooseMinCost) {
-      const best = pickMinCostCombo(tm.mealCombos);
-      if (best) tm.choosenCombo = best;
-    } else if (Number.isInteger(chooseIndex) && chooseIndex >= 0 && chooseIndex < tm.mealCombos.length) {
-      tm.choosenCombo = tm.mealCombos[chooseIndex];
+    await doc.save();
+    await doc.populate(populateFull);
+    return res.json({ message: 'Removed', timedMeal: doc });
+  } catch (err) {
+    console.error('[removeMealFromChosenCombo]', err);
+    return res.status(err.status || 500).json({ error: err.message || 'Server error' });
+  }
+}
+
+async function validateAddQuantity(req, res) {
+  try {
+    const { id } = req.params;
+    const { mealId } = req.body || {};
+    if (!isObjectId(id))     return res.status(400).json({ error: 'Invalid timed meal id' });
+    if (!isObjectId(mealId)) return res.status(400).json({ error: 'Invalid mealId' });
+
+    // 1) Load timed meal (with chosen populated) and ensure ownership
+    const tm = await TimedMeal.findById(id)
+      .populate({ path: 'choosenCombo.meals.meal',     select: 'portionSize totalCalories totalProtein totalCarbs totalFat' })
+      .populate({ path: 'choosenCombo.meals.userMeal', select: 'portionSize totalCalories totalProtein totalCarbs totalFat user' });
+    if (!tm) return res.status(404).json({ error: 'TimedMeal not found' });
+    ensureOwner(tm, req);
+
+    // 2) Resolve candidate meal: prefer UserMeal (and ensure it belongs to the user)
+    let candidateDoc = await UserMeal.findById(mealId)
+      .select('portionSize totalCalories totalProtein totalCarbs totalFat user');
+    let source = 'user';
+    if (!candidateDoc) {
+      candidateDoc = await Meal.findById(mealId)
+        .select('portionSize totalCalories totalProtein totalCarbs totalFat');
+      source = 'system';
+    }
+    if (!candidateDoc) return res.status(404).json({ error: 'Meal not found' });
+    if (source === 'user' && req?.user?.id && String(candidateDoc.user) !== String(req.user.id)) {
+      return res.status(403).json({ error: 'Forbidden: UserMeal not yours' });
     }
 
-    await tm.save();
+    // 3) Build slot demand: NR × timedMealConfig[type]
+    const user = await User.findById(tm.user).select('nutritionalRequirement timedMealConfig');
+    if (!user?.nutritionalRequirement) return res.status(400).json({ error: 'User NR not found' });
+    const tc = (user.timedMealConfig || []).find(x => x.type === tm.type);
+    if (!tc) return res.status(400).json({ error: `No timedMealConfig entry for type ${tm.type}` });
 
-    const populated = await TimedMeal.findById(tm._id)
-      .populate('mealCombos.meals.meal')
-      .populate('choosenCombo.meals.meal');
+    const slotDemand = calcDemand(user.nutritionalRequirement, tc); // { calories, protein, carbs, fats }
 
-    return res.status(200).json(populated);
+    // 4) Current chosen totals
+    const current = chosenTotals(tm);
+
+    // 5) Remaining demand = slotDemand - current
+    const remain = {
+      calories: Math.max(0, r2(slotDemand.calories - current.calories)),
+      protein:  Math.max(0, r2(slotDemand.protein  - current.protein)),
+      carbs:    Math.max(0, r2(slotDemand.carbs    - current.carbs)),
+      fats:     Math.max(0, r2(slotDemand.fats     - current.fats)),
+    };
+
+    // 6) Determine quantity range [STEP .. fMax] based on remaining demand and per-portion macros
+    const fMax = maxFactorToMeetRemaining(candidateDoc, remain, GLOBAL_MAX_FACTOR);
+    // Build discrete choices in STEP increments
+    const choices = [];
+    for (let q = STEP; q <= fMax + 1e-9; q += STEP) {
+      const m = macrosFromDoc(candidateDoc);
+      const newTotals = {
+        grams:    r2(current.grams    + m.grams    * q),
+        calories: r2(current.calories + m.calories * q),
+        protein:  r2(current.protein  + m.protein  * q),
+        carbs:    r2(current.carbs    + m.carbs    * q),
+        fats:     r2(current.fats     + m.fats     * q),
+      };
+      const cost = Number(planCost(
+        { calories: newTotals.calories, protein: newTotals.protein, fat: newTotals.fats, carb: newTotals.carbs },
+        slotDemand
+      ).toFixed(4));
+      const feasible = withinTolerance(
+        { calories: newTotals.calories, protein: newTotals.protein, fat: newTotals.fats, carb: newTotals.carbs },
+        {
+          calorieDemand: slotDemand.calories,
+          proteinDemand: slotDemand.protein,
+          fatDemand:     slotDemand.fats,
+          carbDemand:    slotDemand.carbs
+        },
+        TOL_PCT
+      );
+      choices.push({
+        quantity: Number(q.toFixed(2)),
+        totals: newTotals,
+        cost,
+        feasible
+      });
+      // early exit if we hit perfect zero cost (rare but nice)
+      if (feasible && cost === 0) break;
+    }
+
+    if (!choices.length) {
+      // edge case: no positive step fits (e.g., all remaining ≤0 or meal macros are 0)
+      return res.json({
+        source,
+        minQty: STEP,
+        maxQty: STEP,
+        step: STEP,
+        remainingDemand: remain,
+        message: 'No positive beneficial quantity inferred; adding more will likely increase cost.',
+      });
+    }
+
+    // 7) Pick the best (lowest cost), prefer feasible
+    choices.sort((a, b) => {
+      if (a.feasible && !b.feasible) return -1;
+      if (!a.feasible && b.feasible) return 1;
+      return a.cost - b.cost;
+    });
+    const best = choices[0];
+
+    return res.json({
+      source,
+      step: STEP,
+      minQty: STEP,
+      maxQty: Number(fMax.toFixed(2)),
+      remainingDemand: remain,
+      slotDemand,
+      currentTotals: current,
+      best,
+      // limit table length to avoid huge payloads
+      table: choices.slice(0, 40)
+    });
   } catch (err) {
-    console.error('[updateTimedMeal] error:', err);
-    return res.status(500).json({ error: 'Failed to update timed meal', details: err.message });
+    console.error('[validateAddQuantity]', err);
+    return res.status(err.status || 500).json({ error: err.message || 'Server error' });
   }
-};
+}
 
-exports.deleteTimedMeal = async (req, res) => {
-  try {
-    const timedMeal = await TimedMeal.findByIdAndDelete(req.params.id);
-    if (!timedMeal) return res.status(404).json({ error: 'Timed meal not found' });
-    return res.status(200).json({ message: 'Timed meal deleted successfully' });
-  } catch (err) {
-    console.error('[deleteTimedMeal] error:', err);
-    return res.status(500).json({ error: 'Failed to delete timed meal', details: err.message });
-  }
+module.exports = {
+  create,
+  remove,
+  getAll,
+  getById,
+  addUserMealToChosenCombo,
+  replaceChosenComboByOtherCombo,
+  removeMealFromChosenCombo,
+  validateAddQuantity,
 };

@@ -12,6 +12,13 @@ export default function MealModal({
 }) {
   if (!selectedMeal) return null;
 
+  // sensible default for units if none provided
+  const portionUnit = selectedMeal.portionSizeUnit || "g";
+  const hasDescription = Boolean(
+    (selectedMeal.description || "").toString().trim()
+  );
+  const hasPortion = Number(selectedMeal.portionSize) > 0;
+
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
@@ -31,7 +38,7 @@ export default function MealModal({
         </button>
 
         {/* Header: Image + Title */}
-        <div className="flex flex-col items-center space-y-4 mb-6">
+        <div className="flex flex-col items-center space-y-4 mb-4">
           <img
             src={selectedMeal.imageUrl || selectedMeal.image}
             alt={selectedMeal.name}
@@ -41,6 +48,25 @@ export default function MealModal({
             {selectedMeal.name}
           </h2>
         </div>
+
+        {/* Details: Description + Portion */}
+        {(hasDescription || hasPortion) && (
+          <div className="mb-6">
+            {hasDescription && (
+              <p className="text-gray-700 text-sm leading-relaxed">
+                {selectedMeal.description}
+              </p>
+            )}
+            {hasPortion && (
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
+                <span className="font-semibold">Portion</span>
+                <span>
+                  {Number(selectedMeal.portionSize).toFixed(0)} {portionUnit}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Ingredients Section */}
         <section className="mb-6">
@@ -79,26 +105,25 @@ export default function MealModal({
           <div className="grid grid-cols-2 gap-4 text-gray-700">
             <div className="flex justify-between">
               <span>Calories</span>
-              <span>{selectedMeal.totalCalories.toFixed(2)}</span>
+              <span>{Number(selectedMeal.totalCalories || 0).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>Protein (g)</span>
-              <span>{selectedMeal.totalProtein.toFixed(2)}</span>
+              <span>{Number(selectedMeal.totalProtein || 0).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>Carbohydrates (g)</span>
-              <span>{selectedMeal.totalCarbs.toFixed(2)}</span>
+              <span>{Number(selectedMeal.totalCarbs || 0).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>Fat (g)</span>
-              <span>{selectedMeal.totalFat.toFixed(2)}</span>
+              <span>{Number(selectedMeal.totalFat || 0).toFixed(2)}</span>
             </div>
           </div>
         </section>
 
         {/* Buttons */}
         <section className="flex flex-wrap gap-3 justify-center">
-          {/* Show Save To My Meals only on 'all' tab */}
           {activeTab === "all" && (
             <button
               onClick={() => handleSaveToMyMeals(selectedMeal)}
@@ -109,7 +134,6 @@ export default function MealModal({
             </button>
           )}
 
-          {/* Show Delete and Share buttons on 'my' tab */}
           {activeTab === "my" && (
             <>
               <button
@@ -132,7 +156,6 @@ export default function MealModal({
             </>
           )}
 
-          {/* Pending tab buttons */}
           {activeTab === "pending" && (
             <>
               <button
@@ -152,7 +175,6 @@ export default function MealModal({
             </>
           )}
 
-          {/* System tab delete only */}
           {activeTab === "system" && (
             <button
               onClick={() => handleDeleteMeal(selectedMeal._id)}
@@ -167,3 +189,4 @@ export default function MealModal({
     </div>
   );
 }
+ 

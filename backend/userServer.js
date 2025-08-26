@@ -22,7 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 // Route
 app.use('/api/fooditem', foodItemRoute);
 app.use('/api/meal',mealRoute);
-app.use('/api/timedMeal',timedMealRoute);
+app.use('/api/timed-meals',timedMealRoute);
 app.use('/api/dayPlan',dayPlanRoute);
 app.use('/api/weekPlans',weekPlanRoute);
 app.use('/api/users',userRoute);

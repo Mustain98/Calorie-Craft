@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Sidebar from "../components/sideBar";
-import MealForm from "../components/mealForm";
+import MealForm from "../components/MealComponents/mealForm";
 
 export default function CreateMeal() {
   const [share, setShare] = useState(false);
@@ -18,7 +18,6 @@ export default function CreateMeal() {
       }}
       buttonLabels={[
         { text: "Save to My Meals", onClick: () => setShare(false) },
-        { text: "Save & Share", onClick: () => setShare(true) },
       ]}
       shareState={[share, setShare]}
     />

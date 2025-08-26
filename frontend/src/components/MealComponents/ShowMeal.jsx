@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
-
+import MealCard from "./MealCard";
 const CATEGORIES = [
   "breakfast","lunch","dinner","snack","main dish","side dish","dessert","drink",
 ];
@@ -216,58 +216,7 @@ const ShowMeal = ({
                 </div>
               ) : (
                 displayMeals.map((meal) => (
-                  <div
-                    key={meal._id}
-                    className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-100 hover:-translate-y-1 hover:shadow-lg transition cursor-pointer"
-                    onClick={() => handleMealClick(meal)}
-                  >
-                    <img
-                      src={meal.imageUrl || meal.image}
-                      alt={meal.name}
-                      className="w-full max-h-40 object-cover"
-                    />
-                    <div className="p-4">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                        {meal.name}
-                      </h3>
-
-                      {Array.isArray(meal.categories) && meal.categories.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {meal.categories.map((c, i) => (
-                            <span
-                              key={`${meal._id}-cat-${i}`}
-                              className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border"
-                            >
-                              {c}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      <p className="text-sm text-gray-600 mb-3">
-                        Calories: {(meal.totalCalories ?? 0).toFixed
-                          ? meal.totalCalories.toFixed(2)
-                          : Number(meal.totalCalories || 0).toFixed(2)}
-                      </p>
-                      <div className="flex justify-between text-xs text-gray-500 font-medium">
-                        <span>
-                          Protein: {(meal.totalProtein ?? 0).toFixed
-                            ? meal.totalProtein.toFixed(2)
-                            : Number(meal.totalProtein || 0).toFixed(2)}g
-                        </span>
-                        <span>
-                          Carbs: {(meal.totalCarbs ?? 0).toFixed
-                            ? meal.totalCarbs.toFixed(2)
-                            : Number(meal.totalCarbs || 0).toFixed(2)}g
-                        </span>
-                        <span>
-                          Fat: {(meal.totalFat ?? 0).toFixed
-                            ? meal.totalFat.toFixed(2)
-                            : Number(meal.totalFat || 0).toFixed(2)}g
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  <MealCard key={meal._id} meal={meal} onClick={() => handleMealClick(meal)} />
                 ))
               )}
             </div>
