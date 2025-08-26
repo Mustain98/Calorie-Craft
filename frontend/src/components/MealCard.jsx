@@ -1,7 +1,7 @@
 import React from "react";
 
-const MealCard = ({ customLabel, onCustomLabelChange, onRemove }) => {
-  const [meal, setMeal] = React.useState("");
+const MealCard = ({ name, type, onNameChange, onRemove, onTypeChange }) => {
+  
 
   return (
     <div className="max-w-md mx-auto p-4 bg-white shadow rounded-lg relative">
@@ -18,9 +18,9 @@ const MealCard = ({ customLabel, onCustomLabelChange, onRemove }) => {
         <div className="flex-1">
           <input
             type="text"
-            value={customLabel}
-            onChange={(e) => onCustomLabelChange(e.target.value)}
-            placeholder="Enter label"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
+            placeholder="Enter Name"
             className="w-full mt-1 border border-gray-300 rounded-lg p-2 text-gray-700"
           />
         </div>
@@ -28,8 +28,8 @@ const MealCard = ({ customLabel, onCustomLabelChange, onRemove }) => {
         {/* Right side: Dropdown */}
         <div className="flex-1">
           <select
-            value={meal}
-            onChange={(e) => setMeal(e.target.value)}
+            value={type}
+            onChange={(e) => onTypeChange(e.target.value)}
             className="w-full mt-1 border border-gray-300 rounded-lg p-2 text-gray-700"
           >
             <option value="">--Choose--</option>

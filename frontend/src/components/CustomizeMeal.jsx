@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../pages/CustomizeMeal.css";
 
-function DynamicPercentageSliders({ mealCards }) {
+function DynamicPercentageSliders({ mealCards, onMealConfigChange }) {
   const portionTypes = [
     "caloriePortion",
     "carbPortion",
@@ -18,6 +18,8 @@ function DynamicPercentageSliders({ mealCards }) {
       return acc;
     }, {})
   );
+
+  const [mealconfig, setMealConfig] = useState([]);
 
   const colors = [
     "#e74c3c",
@@ -45,6 +47,21 @@ function DynamicPercentageSliders({ mealCards }) {
       return updated;
     });
   }, [mealCards]);
+
+  useEffect(() => {
+    const config = mealCards.map((meal, index) => ({
+      name: meal.name || "",
+      type: meal.type || "",
+      caloriePortion: (slidersByPortion["caloriePortion"]?.[index] || 0) / 100,
+      carbPortion: (slidersByPortion["carbPortion"]?.[index] || 0) / 100,
+      proteinPortion: (slidersByPortion["proteinPortion"]?.[index] || 0) / 100,
+      fatPortion: (slidersByPortion["fatPortion"]?.[index] || 0) / 100,
+      order: index,
+    }));
+    setMealConfig(config);
+
+    onMealConfigChange(config);
+  },[slidersByPortion]);
 
   const handleSliderChange = (index, newValueRaw) => {
     const sliders = slidersByPortion[selectedPortion] || [];
@@ -82,10 +99,12 @@ function DynamicPercentageSliders({ mealCards }) {
         ))}
       </select>
 
-      {mealCards.map((label, index) => (
+      {mealCards.map((meal, index) => (
         <div key={index} className="slider-card">
+          <label>{meal.type || "--No Name--"}</label>
+
           <label>
-            {label}: {(sliders[index] || 0).toFixed(2)}%
+            {meal.name || ""}: {(sliders[index] || 0).toFixed(2)}%
           </label>
           <input
             type="range"
@@ -101,12 +120,8 @@ function DynamicPercentageSliders({ mealCards }) {
           />
         </div>
       ))}
-
-      
     </div>
   );
 }
 
 export default DynamicPercentageSliders;
-
-
