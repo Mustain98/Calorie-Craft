@@ -13,6 +13,7 @@
     "react-router-dom": "^7.6.2",
     "react-scripts": "5.0.1",
     "react-toastify": "^11.0.5",
+    "serve": "^14.2.4",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -20,7 +21,8 @@
     "start:admin": "cross-env REACT_APP_ADMIN=true PORT=3002 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "npm run build && serve -s build"
   },
   "eslintConfig": {
     "extends": [

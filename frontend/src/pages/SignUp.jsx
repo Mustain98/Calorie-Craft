@@ -42,7 +42,7 @@ export default function SignupPage() {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/users/register",
+         `${process.env.REACT_APP_API_BASE_URL}/api/users/register`,
         {
           name: formData.name,
           email: formData.email,

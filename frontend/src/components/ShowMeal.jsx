@@ -2,25 +2,32 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 
 const CATEGORIES = [
-  "breakfast","lunch","dinner","snack","main dish","side dish","dessert","drink",
+  "breakfast",
+  "lunch",
+  "dinner",
+  "snack",
+  "main dish",
+  "side dish",
+  "dessert",
+  "drink",
 ];
 
 // helper: intersect arrays of meals by _id
 const intersectById = (a, b) => {
-  const set = new Set(b.map(x => x._id));
-  return a.filter(x => set.has(x._id));
+  const set = new Set(b.map((x) => x._id));
+  return a.filter((x) => set.has(x._id));
 };
 
 const ShowMeal = ({
   activeTab,
   setActiveTab,
-  filteredMeals,         
+  filteredMeals,
   handleMealClick,
   sidebarVisible,
   tab,
-  baseUrl,               
-  authToken,              
-  filterTabs = ["all"],   
+  baseUrl,
+  authToken,
+  filterTabs = ["all"],
 }) => {
   // local UI state (only used when activeTab ∈ filterTabs)
   const [search, setSearch] = useState("");
@@ -31,7 +38,9 @@ const ShowMeal = ({
   const isBackendTab = filterTabs.includes(activeTab);
 
   const toggleCat = (cat) =>
-    setSelectedCats(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
+    setSelectedCats((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
 
   const clearFilters = () => {
     setSearch("");
@@ -70,28 +79,44 @@ const ShowMeal = ({
       try {
         // No filters => load all
         if (!hasSearch && !hasCats) {
-          const { data } = await axios.get(`${baseUrl}/meal/`, { headers, cancelToken: srcS.token });
-          setServerMeals(Array.isArray(data) ? data : (data.items || data.meals || []));
+          const { data } = await axios.get(`${baseUrl}/api/meal/`, {
+            headers,
+            cancelToken: srcS.token,
+          });
+          setServerMeals(
+            Array.isArray(data) ? data : data.items || data.meals || []
+          );
           setLoading(false);
           return;
         }
 
         // Only search
         if (hasSearch && !hasCats) {
-          const { data } = await axios.get(`${baseUrl}/meal/search`, {
-            params: { q: search.trim() }, headers, cancelToken: srcS.token
+          const { data } = await axios.get(`${baseUrl}/api/meal/search`, {
+            params: { q: search.trim() },
+            headers,
+            cancelToken: srcS.token,
           });
-          setServerMeals(Array.isArray(data) ? data : (data.items || data.meals || []));
+          setServerMeals(
+            Array.isArray(data) ? data : data.items || data.meals || []
+          );
           setLoading(false);
           return;
         }
 
         // Only categories
         if (!hasSearch && hasCats) {
-          const { data } = await axios.get(`${baseUrl}/meal/by-categories`, {
-            params: { categories: selectedCats.join(",") }, headers, cancelToken: srcC.token
-          });
-          const arr = Array.isArray(data) ? data : (data.items || data.meals || []);
+          const { data } = await axios.get(
+            `${baseUrl}/api/meal/by-categories`,
+            {
+              params: { categories: selectedCats.join(",") },
+              headers,
+              cancelToken: srcC.token,
+            }
+          );
+          const arr = Array.isArray(data)
+            ? data
+            : data.items || data.meals || [];
           setServerMeals(arr);
           setLoading(false);
           return;
@@ -99,14 +124,20 @@ const ShowMeal = ({
 
         // Both: fetch both, then intersect by _id
         const [sRes, cRes] = await Promise.all([
-          axios.get(`${baseUrl}/meals/search`, {
-            params: { q: search.trim() }, headers, cancelToken: srcS.token
+          axios.get(`${baseUrl}/api/meals/search`, {
+            params: { q: search.trim() },
+            headers,
+            cancelToken: srcS.token,
           }),
-          axios.get(`${baseUrl}/meals/by-categories`, {
-            params: { categories: selectedCats.join(",") }, headers, cancelToken: srcC.token
+          axios.get(`${baseUrl}/api/meals/by-categories`, {
+            params: { categories: selectedCats.join(",") },
+            headers,
+            cancelToken: srcC.token,
           }),
         ]);
-        const catsArr = Array.isArray(cRes.data) ? cRes.data : (cRes.data.items || cRes.data.meals || []);
+        const catsArr = Array.isArray(cRes.data)
+          ? cRes.data
+          : cRes.data.items || cRes.data.meals || [];
         setServerMeals(intersectById(sRes.data || [], catsArr || []));
         setLoading(false);
       } catch (err) {
@@ -129,7 +160,7 @@ const ShowMeal = ({
   // decide what to render
   const displayMeals = isBackendTab ? serverMeals : filteredMeals;
 
-  const tabs = tab.split(",").map(t => t.trim());
+  const tabs = tab.split(",").map((t) => t.trim());
 
   return (
     <main
@@ -231,39 +262,47 @@ const ShowMeal = ({
                         {meal.name}
                       </h3>
 
-                      {Array.isArray(meal.categories) && meal.categories.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {meal.categories.map((c, i) => (
-                            <span
-                              key={`${meal._id}-cat-${i}`}
-                              className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border"
-                            >
-                              {c}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      {Array.isArray(meal.categories) &&
+                        meal.categories.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {meal.categories.map((c, i) => (
+                              <span
+                                key={`${meal._id}-cat-${i}`}
+                                className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border"
+                              >
+                                {c}
+                              </span>
+                            ))}
+                          </div>
+                        )}
 
                       <p className="text-sm text-gray-600 mb-3">
-                        Calories: {(meal.totalCalories ?? 0).toFixed
+                        Calories:{" "}
+                        {(meal.totalCalories ?? 0).toFixed
                           ? meal.totalCalories.toFixed(2)
                           : Number(meal.totalCalories || 0).toFixed(2)}
                       </p>
                       <div className="flex justify-between text-xs text-gray-500 font-medium">
                         <span>
-                          Protein: {(meal.totalProtein ?? 0).toFixed
+                          Protein:{" "}
+                          {(meal.totalProtein ?? 0).toFixed
                             ? meal.totalProtein.toFixed(2)
-                            : Number(meal.totalProtein || 0).toFixed(2)}g
+                            : Number(meal.totalProtein || 0).toFixed(2)}
+                          g
                         </span>
                         <span>
-                          Carbs: {(meal.totalCarbs ?? 0).toFixed
+                          Carbs:{" "}
+                          {(meal.totalCarbs ?? 0).toFixed
                             ? meal.totalCarbs.toFixed(2)
-                            : Number(meal.totalCarbs || 0).toFixed(2)}g
+                            : Number(meal.totalCarbs || 0).toFixed(2)}
+                          g
                         </span>
                         <span>
-                          Fat: {(meal.totalFat ?? 0).toFixed
+                          Fat:{" "}
+                          {(meal.totalFat ?? 0).toFixed
                             ? meal.totalFat.toFixed(2)
-                            : Number(meal.totalFat || 0).toFixed(2)}g
+                            : Number(meal.totalFat || 0).toFixed(2)}
+                          g
                         </span>
                       </div>
                     </div>

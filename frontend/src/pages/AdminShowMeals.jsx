@@ -127,7 +127,7 @@ export default function AdminShowMeals() {
         sidebarVisible={sidebarVisible}
         handleMealClick={handleMealClick}
         tab="pending,system"
-        baseUrl="http://localhost:5001/api"
+        baseUrl="http://localhost:5001"
         authToken={localStorage.getItem("token")}
         filterTabs={["system"]}
       />
