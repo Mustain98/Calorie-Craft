@@ -1,27 +1,12 @@
-const express = require('express');
-const router = express.Router();
+// backend/src/routes/timedMeal.js
+const router = require('express').Router();
+const { protect } = require('../middleware/authMiddleware');
+const c = require('../controllers/timedMealController');
 
-const {
-  createTimedMeal,
-  getAllTimedMeals,
-  getTimedMealById,
-  updateTimedMeal,
-  deleteTimedMeal
-} = require('../controllers/timedMealController');
-
-// Create a new timed meal (e.g., breakfast)
-router.post('/', createTimedMeal);
-
-// Get all timed meals
-router.get('/', getAllTimedMeals);
-
-// Get a timed meal by ID
-router.get('/:id', getTimedMealById);
-
-// Update a timed meal by ID
-router.put('/:id', updateTimedMeal);
-
-// Delete a timed meal by ID
-router.delete('/:id', deleteTimedMeal);
+router.post('/', protect, c.createTimedMeal);
+router.get('/', protect, c.getAllTimedMeals);
+router.get('/:id', protect, c.getTimedMealById);
+router.patch('/:id', protect, c.updateTimedMeal);
+router.delete('/:id', protect, c.deleteTimedMeal);
 
 module.exports = router;

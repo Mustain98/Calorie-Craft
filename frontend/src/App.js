@@ -10,7 +10,7 @@ import NutritionalRequirement from "./pages/NutritionalRequirement";
 import MealPlan from "./pages/MealPlan";
 import GoalSetting from "./pages/GoalSetting";
 import CreateMeal from "./pages/CreateMeal";
-import MealPage from "./pages/MealConfigure";
+import MealPlanSetting from "./pages/MealPlanSetting";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -28,7 +28,7 @@ function App() {
         <Route path="/mealplan" element={<MealPlan />} />
         <Route path="/nutrition" element={<NutritionalRequirement />} />
         <Route path="/goal" element={<GoalSetting />} />
-        <Route path="/mealsetting" element={<MealPage />} />
+        <Route path="/mealsetting" element={<MealPlanSetting />} />
       </Routes>
       <ToastContainer position="top-center" autoClose={3000} />
     </Router>

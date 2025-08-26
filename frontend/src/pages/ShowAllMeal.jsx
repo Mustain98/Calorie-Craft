@@ -125,15 +125,18 @@ export default function ShowAllMeal() {
       {userData && (
         <Sidebar userData={userData} visible={sidebarVisible} tab={tab} />
       )}
+        <ShowMeal
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            filteredMeals={filteredMeals}
+            sidebarVisible={sidebarVisible}
+            handleMealClick={handleMealClick}
+            tab="my,all"
+            baseUrl="http://localhost:4000/api"
+            authToken={localStorage.getItem("token")}
+            filterTabs={["all"]}
+        />
 
-      <ShowMeal
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        filteredMeals={filteredMeals}
-        sidebarVisible={sidebarVisible}
-        handleMealClick={handleMealClick}
-        tab={tab}
-      />
 
       {showNutritionModal && selectedMeal && (
         <MealModal
