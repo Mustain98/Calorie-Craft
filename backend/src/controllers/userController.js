@@ -3,8 +3,10 @@ const jwt = require('jsonwebtoken');
 const Meal = require('../models/meal'); 
 const {prepareMealData}=require('../service/mealService');    
 const pendingMeal=require('../models/pendingMeal');
-const {cloudinary}=require('../utils/cloudinary');
-const {isDuplicateInMyMeals,isDuplicateInPendingMeals} = require('../utils/isDuplicateMeal');
+const UserMeal=require('../models/userMeal');
+const {cloneImage,cloudinary}=require('../utils/cloudinary');
+const {isDuplicateInMyMeals,isDuplicateInPendingMeals,isDuplicateForSharing} = require('../utils/isDuplicateMeal');
+
 // Generate JWT
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -56,17 +58,6 @@ const loginUser = async (req, res) => {
 const getCurrentUser = async (req, res) => {
   const user = await User.findById(req.user.id).populate('weekPlan').select('-password');
   if (!user) return res.status(404).json({ error: 'User not found' });
-
-  const needsHeal = !user.nutritionalRequirement ||
-    ['calories','protein','carbs','fats'].some(
-      k => typeof user.nutritionalRequirement[k] !== 'number' || isNaN(user.nutritionalRequirement[k])
-    );
-
-  if (needsHeal) {
-    user.nutritionalRequirement = User.calculateNutrition(user);
-    user.manualNutrition = false;
-    await user.save();
-  }
   res.json(user);
 };
 
@@ -96,82 +87,142 @@ const updateUser = async (req, res) => {
   }
 };
 
-// Add meal to user's meals
 const addMealToMyMeals = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const mealData = await prepareMealData({ ...req.body, file: req.file });
 
-    // Check duplicates
-    const result = await isDuplicateInMyMeals(userId, mealData.name);
-    if (result.isDuplicate) return res.status(400).json({ error: 'Meal already exists' });
+    const duplicateCheck = await isDuplicateInMyMeals(userId, mealData.name);
+    if (duplicateCheck.isDuplicate) {
+      return res.status(400).json({ error: "Meal already exists" });
+    }
 
-    // Push embedded meal
-    const user = await User.findById(userId);
-    user.myMeals.push(mealData);
-    await user.save();
+    if (mealData.imageUrl) {
+      const cloned = await cloneImage(mealData.imageUrl);
+      mealData.imageUrl = cloned.url;
+      mealData.imageId = cloned.id;
+    }
 
-    res.status(201).json({ message: 'Meal saved to your profile', meal: user.myMeals[user.myMeals.length - 1] });
+    const newUserMeal = new UserMeal({
+      ...mealData,
+      user: userId
+    });
+
+    const savedMeal = await newUserMeal.save();
+
+    await User.findByIdAndUpdate(userId, {
+      $push: { myMeals: savedMeal._id }
+    });
+
+    const populatedMeal = await UserMeal.findById(savedMeal._id)
+      .populate('foodItems.food', 'name measuringUnit totalunitweight calories protein carbs fat');
+
+    res.status(201).json({
+      message: "Meal saved to your profile",
+      meal: populatedMeal,
+    });
   } catch (err) {
-    if (req.file?.filename) await cloudinary.uploader.destroy(req.file.filename);
-    console.log(err);
+    if (req.file?.filename) {
+      await cloudinary.uploader.destroy(req.file.filename);
+    }
     res.status(400).json({ error: err.message });
   }
 };
 
-
-
-// Delete meal from user's meals
 const deleteMealFromMyMeals = async (req, res) => {
   try {
     const userId = req.user.id;
     const mealId = req.params.id;
 
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    // ✅ Find the meal before modifying the array
-    const mealToDelete = user.myMeals.find(meal => meal._id.toString() === mealId);
-    if (!mealToDelete) {
-      return res.status(404).json({ error: 'Meal not found in your meals' });
+    const meal = await UserMeal.findById(mealId);
+    if (!meal || meal.user.toString() !== userId) {
+      return res.status(404).json({ error: 'Meal not found' });
     }
 
-    // ✅ Delete the Cloudinary image
-    if (mealToDelete.imageId) {
-      const result = await cloudinary.uploader.destroy(mealToDelete.imageId);
-      console.log('Cloudinary destroy result:', result);
+    if (meal.imageId) {
+      await cloudinary.uploader.destroy(meal.imageId);
     }
 
-    // ✅ Remove the meal from the array
-    user.myMeals = user.myMeals.filter(meal => meal._id.toString() !== mealId);
-    await user.save();
+    await UserMeal.findByIdAndDelete(mealId);
+    await User.findByIdAndUpdate(userId, {
+      $pull: { myMeals: mealId }
+    });
 
-    res.json({ message: 'Meal deleted from your meals' });
-
+    res.json({ message: 'Meal deleted successfully' });
   } catch (err) {
-    console.error('Failed to delete meal:', err);
-    res.status(500).json({ error: 'Server error: failed to delete meal' });
+    res.status(500).json({ error: 'Failed to delete meal' });
   }
 };
 
-
-// Show user's meals
 const showMeals = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
-      .select('myMeals')
-      .populate('myMeals.foodItems.food', 'name'); // populate only name field
+    const userId = req.user._id;
+    const user = await User.findById(userId).populate({
+      path: 'myMeals',
+      populate: {
+        path: 'foodItems.food',
+        select: 'name measuringUnit totalunitweight calories protein carbs fat'
+      }
+    });
 
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    res.status(200).json(user.myMeals);
+    res.status(200).json(user.myMeals || []);
   } catch (err) {
-    console.error('Error fetching user meals:', err);
     res.status(500).json({ error: 'Failed to fetch user meals' });
   }
 };
 
-//update password
+const getMyMealById = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const mealId = req.params.id;
+
+    const meal = await UserMeal.findOne({ _id: mealId, user: userId })
+      .populate('foodItems.food', 'name measuringUnit totalunitweight calories protein carbs fat');
+
+    if (!meal) {
+      return res.status(404).json({ error: 'Meal not found' });
+    }
+
+    res.status(200).json(meal);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch meal' });
+  }
+};
+
+const shareMeal = async (req, res) => {
+  try {
+    const mealId = req.params.id;
+    const userId = req.user._id;
+
+    const meal = await UserMeal.findOne({ _id: mealId, user: userId });
+    if (!meal) return res.status(404).json({ message: 'Meal not found' });
+
+    const duplicateCheck = await isDuplicateForSharing(userId, meal.name);
+    if (duplicateCheck.isDuplicate) {
+      return res.status(400).json({ message: 'Meal already shared' });
+    }
+
+    const newPending = new pendingMeal({
+      name: meal.name,
+      description: meal.description,
+      imageUrl: meal.imageUrl,
+      imageId: meal.imageId,
+      foodItems: meal.foodItems,
+      categories: meal.categories,
+      submittedBy: userId
+    });
+
+    await newPending.save();
+    res.status(201).json({
+      message: 'Meal shared successfully',
+      pendingMeal: newPending
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 const updatePassword =async (req,res) =>{
   try{
@@ -188,66 +239,6 @@ const updatePassword =async (req,res) =>{
     res.status(500).json({ error: 'Failed to update password' });
   }
 };
-
-
-// Share a personal meal by creating a PendingMeal
-// Controller to share a meal
-const shareMeal = async (req, res) => {
-  try {
-    const mealId  = req.params;
-    const userId = req.user._id;
-    const result = await addToPendingMeals(mealId, userId);
-    if (result.success) {
-      return res.status(201).json({
-        message: 'Meal shared successfully as pending meal',
-        pendingMeal: result.pendingMeal
-      });
-    } else {
-      return res.status(result.status).json({ message: result.message });
-    }
-  } catch (err) {
-    console.error('Error in shareMeal:', err);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-};
-
-// Helper function to add a user's meal to PendingMeals
-const addToPendingMeals = async (mealId, userId) => {
-  try {
-    
-    const user = await User.findById(userId);
-    if (!user) return { success: false, status: 404, message: 'User not found' };
-
-    const meal = user.myMeals.id(mealId);
-    if (!meal) return { success: false, status: 404, message: 'Meal not found in your saved meals.' };
-      const result = await isDuplicateInPendingMeals(userId, meal.name);
-
-    if (result.isDuplicate) {
-      return { success: false, status: 400, message: 'You have already shared a meal with this name.' };
-    };
-
-    const newPending = new pendingMeal({
-      name: meal.name,
-      description: meal.description || '',
-      imageUrl: meal.imageUrl || '',
-      imageId: meal.imageId || null,
-      foodItems: meal.foodItems.map(item => ({
-        food: item.food,
-        quantity: item.quantity
-      })),
-      categories:meal.categories,
-      submittedBy: userId
-    });
-
-    await newPending.save();
-
-    return { success: true, pendingMeal: newPending };
-  } catch (err) {
-    console.error('Error in addToPendingMeals:', err);
-    return { success: false, status: 500, message: 'Failed to share meal' };
-  }
-};
-
 
 //show timed meal configuration
 const showTimedMealConfiguration =async (req,res)=>{
@@ -297,6 +288,7 @@ const updateTimedMealConfiguration = async (req, res) => {
 
 module.exports = {
   registerUser,
+  getMyMealById,
   loginUser,
   getCurrentUser,
   updateUser,

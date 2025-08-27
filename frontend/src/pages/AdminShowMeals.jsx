@@ -3,8 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import AdminSidebar from "../components/AdminSidebar";
-import MealModal from "../components/MealModal";
-import ShowMeal from "../components/ShowMeal";
+import MealModal from "../components/MealComponents/MealModal";
+import ShowMeal from "../components/MealComponents/ShowMeal";
 import { toast } from "react-toastify";
 
 export default function AdminShowMeals() {
@@ -127,7 +127,7 @@ export default function AdminShowMeals() {
         sidebarVisible={sidebarVisible}
         handleMealClick={handleMealClick}
         tab="pending,system"
-        baseUrl="http://localhost:5001"
+        baseUrl="http://localhost:5001/api"
         authToken={localStorage.getItem("token")}
         filterTabs={["system"]}
       />

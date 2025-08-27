@@ -1,6 +1,6 @@
 import React from "react";
 import AdminSidebar from "../components/AdminSidebar";
-import MealForm from "../components/mealForm";
+import MealForm from "../components/MealComponents/mealForm";
 
 export default function AdminCreateMeal() {
   return (

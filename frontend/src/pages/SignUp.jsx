@@ -60,7 +60,7 @@ export default function SignupPage() {
       setSuccess("User registered successfully! Redirecting to login...");
       toast.success("Registration Successful");
       setTimeout(() => {
-        navigate("/login");
+        navigate("/signin");
       }, 1500);
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed.");
