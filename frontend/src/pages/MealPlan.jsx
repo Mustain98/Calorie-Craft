@@ -58,7 +58,7 @@ export default function MealPlan() {
       const code = err?.response?.status;
       if (code === 401) {
         localStorage.removeItem("token");
-        navigate("/login");
+        navigate("/signin");
       } else {
         console.error("[MealPlan] loadAll:", err?.response?.data || err);
         toast.error("Failed to load meal plan.");
@@ -70,7 +70,7 @@ export default function MealPlan() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return navigate("/login");
+    if (!token) return navigate("/signin");
     loadAll();
   }, [navigate, loadAll]);
 
@@ -84,10 +84,12 @@ export default function MealPlan() {
       const code = err?.response?.status;
       if (code === 401) {
         localStorage.removeItem("token");
-        navigate("/login");
+        navigate("/signin");
       } else {
         toast.error(err?.response?.data?.error || "Failed to generate plan.");
       }
+    } finally {
+      setOverlayLoading(false);
     }
   };
 

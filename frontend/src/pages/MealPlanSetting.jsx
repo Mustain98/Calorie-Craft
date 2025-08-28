@@ -36,7 +36,7 @@ const MealPlanSetting = () => {
   // --- load user + existing meal plan setting
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return navigate("/login");
+    if (!token) return navigate("/signin");
     const headers = { Authorization: `Bearer ${token}` };
 
     (async () => {
@@ -85,7 +85,7 @@ const MealPlanSetting = () => {
       } catch (err) {
         console.error("Failed to fetch meal plan:", err);
         localStorage.removeItem("token");
-        navigate("/login");
+        navigate("/signin");
       }
     })();
   }, [navigate]);
@@ -147,7 +147,7 @@ const MealPlanSetting = () => {
   // --- Save to backend: PUT /users/me/updateMealPlanSetting
   const handleSave = async () => {
     const token = localStorage.getItem("token");
-    if (!token) return navigate("/login");
+    if (!token) return navigate("/signin");
 
     const headers = {
       Authorization: `Bearer ${token}`,
@@ -192,7 +192,7 @@ const MealPlanSetting = () => {
           err.response?.data?.message ||
             `Save failed (${err.response.status})`
         );
-        if (err.response.status === 401) navigate("/login");
+        if (err.response.status === 401) navigate("/signin");
       } else if (err.request) {
         console.error("Save failed (network/CORS):", err.request);
         toast.error("Network/CORS error. Check server.");
@@ -209,7 +209,7 @@ const MealPlanSetting = () => {
   // Backend route assumed: POST /api/weekplans  (adjust if you mounted differently)
   const handleGenerate = async () => {
     const token = localStorage.getItem("token");
-    if (!token) return navigate("/login");
+    if (!token) return navigate("/signin");
 
     const headers = {
       Authorization: `Bearer ${token}`,
@@ -232,7 +232,7 @@ const MealPlanSetting = () => {
           err.response?.data?.message ||
             `Generate failed (${err.response.status})`
         );
-        if (err.response.status === 401) navigate("/login");
+        if (err.response.status === 401) navigate("/signin");
       } else if (err.request) {
         console.error("Generate failed (network/CORS):", err.request);
         toast.error("Network/CORS error. Check server.");
