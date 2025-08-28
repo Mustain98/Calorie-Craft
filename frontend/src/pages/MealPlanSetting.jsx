@@ -7,7 +7,7 @@ import DynamicPercentageSliders from "../components/timedMealSetting";
 import Sidebar from "../components/sideBar";
 import { toast } from "react-toastify";
 
-const API_BASE = "http://localhost:4000/api";
+const API_BASE = `${process.env.REACT_APP_API_BASE_URL}/api`;
 
 const MealPlanSetting = () => {
   // Left column cards: label (name), type, order

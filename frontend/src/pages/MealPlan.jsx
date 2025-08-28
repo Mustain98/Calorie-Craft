@@ -9,14 +9,18 @@ import TimedMealList from "../components/mealplan/TimedMealList";
 import AddMealModal from "../components/mealplan/AddMealModal";
 import CombosModal from "../components/mealplan/CombosModal";
 import MealModal from "../components/MealComponents/MealModal";
+import FullPageLoader from "../components/FullPageLoader";
 import { toast } from "react-toastify";
 
-const API_BASE = "http://localhost:4000/api";
-const HEADERS = () => ({ Authorization: `Bearer ${localStorage.getItem("token") || ""}` });
+const API_BASE = `${process.env.REACT_APP_API_BASE_URL}/api`;
+const HEADERS = () => ({
+  Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+});
 
 export default function MealPlan() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [overlayLoading, setOverlayLoading] = useState(false);
 
   const [user, setUser] = useState(null);
   const [weekPlan, setWeekPlan] = useState(null);
@@ -33,10 +37,14 @@ export default function MealPlan() {
     setLoading(true);
     setPlanMissing(false);
     try {
-      const me = await axios.get(`${API_BASE}/users/me`, { headers: HEADERS() });
+      const me = await axios.get(`${API_BASE}/users/me`, {
+        headers: HEADERS(),
+      });
       setUser(me.data || null);
 
-      const wpRes = await axios.get(`${API_BASE}/weekPlans/me`, { headers: HEADERS() });
+      const wpRes = await axios.get(`${API_BASE}/weekPlans/me`, {
+        headers: HEADERS(),
+      });
       const wp = wpRes.data?.weekPlan || null;
 
       if (!wp || !Array.isArray(wp.days) || wp.days.length === 0) {
@@ -68,6 +76,7 @@ export default function MealPlan() {
 
   const generatePlan = async () => {
     try {
+      setOverlayLoading(true);
       await axios.post(`${API_BASE}/weekPlans`, {}, { headers: HEADERS() });
       toast.success("Generated a new 7-day plan.");
       await loadAll();
@@ -95,7 +104,15 @@ export default function MealPlan() {
   const toggleSidebar = () => setSidebarVisible((v) => !v);
 
   const weekDays = useMemo(
-    () => ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    () => [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ],
     []
   );
 
@@ -113,9 +130,13 @@ export default function MealPlan() {
       }));
       return { ...prev, days: nextDays };
     });
-    setShowCombosFor((cur) => (cur && String(cur._id) === String(updatedTm._id) ? updatedTm : cur));
+    setShowCombosFor((cur) =>
+      cur && String(cur._id) === String(updatedTm._id) ? updatedTm : cur
+    );
     setShowAddFor((cur) =>
-      cur && cur.timedMeal && String(cur.timedMeal._id) === String(updatedTm._id)
+      cur &&
+      cur.timedMeal &&
+      String(cur.timedMeal._id) === String(updatedTm._id)
         ? { ...cur, timedMeal: updatedTm }
         : cur
     );
@@ -183,7 +204,10 @@ export default function MealPlan() {
     try {
       // if looks populated (has foodItems with embedded food), show directly
       if (Array.isArray(mealDoc?.foodItems) && mealDoc.foodItems.length > 0) {
-        if (mealDoc.foodItems[0]?.food?.name || typeof mealDoc.foodItems[0]?.food === "object") {
+        if (
+          mealDoc.foodItems[0]?.food?.name ||
+          typeof mealDoc.foodItems[0]?.food === "object"
+        ) {
           setSelectedMealForPreview(mealDoc);
           return;
         }
@@ -222,7 +246,11 @@ export default function MealPlan() {
         }`}
       >
         <div className="flex items-center justify-between py-3">
-          <DayTabs days={weekDays} activeIndex={activeDayIndex} onSelect={setActiveDayIndex} />
+          <DayTabs
+            days={weekDays}
+            activeIndex={activeDayIndex}
+            onSelect={setActiveDayIndex}
+          />
           <div className="flex gap-2">
             <button
               className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -242,16 +270,20 @@ export default function MealPlan() {
 
       {/* Content */}
       <main
-        className={`transition-all duration-300 ${sidebarVisible ? "ml-[270px]" : "ml-0"} px-4 sm:px-6 pb-12`}
+        className={`transition-all duration-300 ${
+          sidebarVisible ? "ml-[270px]" : "ml-0"
+        } px-4 sm:px-6 pb-12`}
       >
         {loading ? (
-          <div className="flex h-[60vh] items-center justify-center text-gray-500">Loading…</div>
+          <div className="flex h-[60vh] items-center justify-center text-gray-500">
+            Loading…
+          </div>
         ) : planMissing ? (
           <div className="mx-auto mt-10 max-w-2xl rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
             <h3 className="text-lg font-semibold">No meal plan yet</h3>
             <p className="mt-1 text-sm text-gray-600">
-              You don’t have an active 7-day plan. Generate one now, or come back after creating your meal plan
-              settings.
+              You don’t have an active 7-day plan. Generate one now, or come
+              back after creating your meal plan settings.
             </p>
             <div className="mt-5 flex justify-center gap-3">
               <button
@@ -275,7 +307,9 @@ export default function MealPlan() {
               timedMeals={timedMeals}
               onOpenMealPreview={openMealPreview}
               onOpenCombos={setShowCombosFor}
-              onOpenReplace={(tm, replaceIndex = null) => setShowAddFor({ timedMeal: tm, replaceIndex })}
+              onOpenReplace={(tm, replaceIndex = null) =>
+                setShowAddFor({ timedMeal: tm, replaceIndex })
+              }
               onRegenerateTimedMeal={handleRegenerateTimedMeal}
               onRemoveItem={removeItemFromChosen}
               onOpenAddMeal={(tm) => setShowAddFor({ timedMeal: tm })}
@@ -313,6 +347,7 @@ export default function MealPlan() {
           onAdd={addUserMeal}
         />
       )}
+      <FullPageLoader visible={overlayLoading} />
     </div>
   );
 }

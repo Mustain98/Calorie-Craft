@@ -8,6 +8,8 @@ backend/node_modules/
 /package-lock.json
 /package.json
 /assets
+frontend/.env
+
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies

@@ -16,7 +16,7 @@ export default function Sidebar({
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     toast.success("Logout Successfully");
-    navigate('/login');
+    navigate('/signin');
   }, 1000);
   };
 

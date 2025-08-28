@@ -7,7 +7,7 @@ export default function CreateMeal() {
 
   return (
     <MealForm
-      apiBaseUrl="http://localhost:4000"
+      apiBaseUrl={process.env.REACT_APP_API_BASE_URL}
       userEndpoint="/api/users/me"
       submitEndpoint="/api/users/me/myMeals"
       SidebarComponent={Sidebar}

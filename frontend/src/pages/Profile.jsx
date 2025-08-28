@@ -17,7 +17,7 @@ export default function ProfilePage() {
 
     const fetchUser = async () => {
       try {
-        const res = await axios.get('http://localhost:4000/api/users/me', {
+        const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/users/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserData(res.data);
@@ -47,7 +47,7 @@ export default function ProfilePage() {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put('http://localhost:4000/api/users/me', {
+      await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/users/me`, {
         email: formData.email,
         age: formData.age,
         gender: formData.gender,

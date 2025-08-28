@@ -24,7 +24,7 @@ export default function NutritionalRequirement() {
     const token = localStorage.getItem('token');
     if (!token) return navigate('/signin');
     try {
-      const res = await axios.get('http://localhost:4000/api/users/me', {
+      const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUserData(res.data);
@@ -47,7 +47,7 @@ export default function NutritionalRequirement() {
   const handleSetDefault = async () => {
     setLoading(true);
     // backend will recalc because manualNutrition = false
-    await axios.put('http://localhost:4000/api/users/me', {
+    await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/users/me`, {
       manualNutrition: false
     }, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -69,7 +69,7 @@ export default function NutritionalRequirement() {
 
   const handleSaveManual = async () => {
     setLoading(true);
-    await axios.put('http://localhost:4000/api/users/me', {
+    await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/users/me`, {
       manualNutrition: true,
       nutritionalRequirement: {
         calories: Number(formValues.calories),

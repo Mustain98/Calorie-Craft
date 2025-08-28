@@ -24,7 +24,7 @@ export default function ShowAllMeal() {
     if (!token) return navigate("/signin");
 
     axios
-      .get("http://localhost:4000/api/users/me", {
+      .get(`${process.env.REACT_APP_API_BASE_URL}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setUserData(res.data))
@@ -33,11 +33,11 @@ export default function ShowAllMeal() {
         navigate("/signin");
       });
 
-    axios.get("http://localhost:4000/api/meal")
+    axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/meal`)
       .then((res) => setAllMeals(res.data))
       .catch((err) => console.error("Failed to load meals:", err));
 
-    axios.get("http://localhost:4000/api/users/me/myMeals", {
+    axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/users/me/myMeals`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setUserMeals(res.data || []))
@@ -58,12 +58,12 @@ export default function ShowAllMeal() {
       let detail;
       if (activeTab === "all") {
         // system meal
-        const { data } = await axios.get(`http://localhost:4000/api/meal/${meal._id}`);
+        const { data } = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/meal/${meal._id}`);
         detail = data;
       } else if (activeTab === "my") {
         // user's embedded meal
         const { data } = await axios.get(
-          `http://localhost:4000/api/users/me/myMeals/${meal._id}`,
+          `${process.env.REACT_APP_API_BASE_URL}/api/users/me/myMeals/${meal._id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         detail = data;
@@ -91,7 +91,7 @@ export default function ShowAllMeal() {
     const token = localStorage.getItem("token");
     try {
       await axios.delete(
-        `http://localhost:4000/api/users/me/myMeals/${selectedMeal._id}`,
+        `${process.env.REACT_APP_API_BASE_URL}/api/users/me/myMeals/${selectedMeal._id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -126,7 +126,7 @@ const handleSaveToMyMeals = async (meal) => {
     };
 
     const res = await axios.post(
-      "http://localhost:4000/api/users/me/myMeals",
+      `${process.env.REACT_APP_API_BASE_URL}/api/users/me/myMeals`,
       payload,
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -143,7 +143,7 @@ const handleSaveToMyMeals = async (meal) => {
     const token = localStorage.getItem("token");
     try {
       const res=await axios.post(
-        `http://localhost:4000/api/users/me/shareMeal/${selectedMeal._id}`,
+        `${process.env.REACT_APP_API_BASE_URL}/api/users/me/shareMeal/${selectedMeal._id}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -169,7 +169,7 @@ const handleSaveToMyMeals = async (meal) => {
             sidebarVisible={sidebarVisible}
             handleMealClick={handleMealClick}
             tab="my,all"
-            baseUrl="http://localhost:4000/api"
+            baseUrl={`${process.env.REACT_APP_API_BASE_URL}/api`}
             authToken={localStorage.getItem("token")}
             filterTabs={["all"]}
         />
