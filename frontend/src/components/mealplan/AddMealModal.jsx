@@ -5,7 +5,7 @@ import MealModal from "../MealComponents/MealModal";
 import { formatFraction } from "./utils";
 import { toast } from "react-toastify";
 
-const API_BASE = "http://localhost:4000/api";
+const API_BASE = `${process.env.REACT_APP_API_BASE_URL}/api`;
 const HEADERS = () => ({ Authorization: `Bearer ${localStorage.getItem("token") || ""}` });
 const STEP = 0.25;
 
