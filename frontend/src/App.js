@@ -8,7 +8,6 @@ import ChangePasswordPage from "./pages/ChangePassword";
 import ShowAllMeal from "./pages/ShowAllMeal";
 import NutritionalRequirement from "./pages/NutritionalRequirement";
 import MealPlan from "./pages/MealPlan";
-import GoalSetting from "./pages/GoalSetting";
 import CreateMeal from "./pages/CreateMeal";
 import MealPlanSetting from "./pages/MealPlanSetting";
 import { ToastContainer } from 'react-toastify';
@@ -27,7 +26,6 @@ function App() {
         <Route path="/createmeal" element={<CreateMeal />} />
         <Route path="/mealplan" element={<MealPlan />} />
         <Route path="/nutrition" element={<NutritionalRequirement />} />
-        <Route path="/goal" element={<GoalSetting />} />
         <Route path="/mealsetting" element={<MealPlanSetting />} />
       </Routes>
       <ToastContainer position="top-center" autoClose={3000} />

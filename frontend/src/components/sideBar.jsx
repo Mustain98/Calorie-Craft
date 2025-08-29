@@ -38,12 +38,11 @@ export default function Sidebar({
       
       <nav className="sidebar-menu">
         <button onClick={() => navigate('/profile')}>Profile</button>
+        <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
         <button onClick={() => navigate('/showmeal')}>Show All Meal</button>
         <button onClick={() => navigate('/createmeal')}>Create Meal</button>
-        <button onClick={() => navigate('/mealplan')}>Meal Plan</button>
-        <button onClick={() => navigate('/nutrition')}>Nutritional Requirement</button>
-        <button onClick={() => navigate('/goal')}>Goal Setting</button>
         <button onClick={() => navigate('/mealsetting')}>Meal Settings</button>
+        <button onClick={() => navigate('/mealplan')}>Meal Plan</button>
         <button onClick={handleLogout}>Log out</button>
       </nav>
 

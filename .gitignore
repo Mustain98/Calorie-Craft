@@ -1,6 +1,6 @@
 backend/.env
 node_modules/
-
+backend/script
 
 node_modules/
 frontend/node_modules/
