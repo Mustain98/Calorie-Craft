@@ -52,7 +52,7 @@ export default function ProfilePage() {
         age: formData.age,
         gender: formData.gender,
         weight: formData.weight,
-        bodyFat: formData.bodyFat,
+        height: formData.height,
         activityLevel: formData.activityLevel
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -104,8 +104,8 @@ export default function ProfilePage() {
             <label>Weight (kg)</label>
             <input type="text" name="weight" value={formData.weight || ''} onChange={handleChange} />
 
-            <label>Body Fat (%)</label>
-            <input type="text" name="bodyFat" value={formData.bodyFat || ''} onChange={handleChange} />
+            <label>Height (cm)</label>
+            <input type="text" name="height" value={formData.height || ''} onChange={handleChange} />
 
             <label>Activity Level</label>
             <input type="text" name="activityLevel" value={formData.activityLevel || ''} onChange={handleChange} />

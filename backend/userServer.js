@@ -21,7 +21,7 @@ app.use(
       "https://calorie-craft-9ii6.onrender.com",
       "http://localhost:3000",
     ],
-    credentials: true, // only needed if you use cookies/auth
+    credentials: true, 
   })
 );
 
