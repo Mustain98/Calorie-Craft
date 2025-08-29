@@ -47,6 +47,9 @@ export default function SigninPage() {
     }
   };
 
+  const handleNavigateToSignup=async()=>{
+    navigate('/signup');
+  }
   return (
     <div className="signin-page">
       <LeftSection />
@@ -77,6 +80,12 @@ export default function SigninPage() {
 
           {error && <p className="error-text">{error}</p>}
           <button type="submit">Sign in</button>
+          <p className="signup-link">
+            Don't have an account?{" "}
+            <span className="link-text" onClick={handleNavigateToSignup}>
+              Sign up here
+            </span>
+          </p>
         </form>
       </div>
     </div>

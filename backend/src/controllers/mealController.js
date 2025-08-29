@@ -144,7 +144,7 @@ const getMealsByCategories = async (req, res) => {
     }
 
     // find meals that contain ANY of the categories
-    const meals = await Meal.find({ categories: { $in: valid } })
+    const meals = await Meal.find({ categories: { $all: valid } })
       .populate('foodItems.food');
 
     return res.status(200).json({

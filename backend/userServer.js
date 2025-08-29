@@ -18,10 +18,11 @@ app.use(express.json());
 app.use(
   cors({
     origin: [
+      "https://calorie-craft-9n90.onrender.com",
       "https://calorie-craft-9ii6.onrender.com",
       "http://localhost:3000",
     ],
-    credentials: true, // only needed if you use cookies/auth
+    credentials: true, 
   })
 );
 
