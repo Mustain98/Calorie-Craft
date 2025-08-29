@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 
 export default function MealForm({
   apiBaseUrl,
   userEndpoint,
   submitEndpoint,
-  SidebarComponent,
+  UserSidebarComponent,
+  AdminSidebarComponent,
   loginRedirectPath,
   successMessages,
   buttonLabels,
@@ -19,6 +20,7 @@ export default function MealForm({
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [userData, setUserData] = useState();
+  const [loading, setloading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -26,7 +28,7 @@ export default function MealForm({
     ingredients: [],
     nutrition: { calories: 0, protein: 0, carbs: 0, fat: 0 },
     imageFile: null,
-    category:[]
+    category: [],
   });
 
   const [share, setShare] = useState(false);
@@ -39,7 +41,7 @@ export default function MealForm({
 
   const handleLogout = () => {
     localStorage.clear();
-    navigate("/login");
+    navigate("/signin");
   };
 
   const handleFileChange = (e) => {
@@ -127,6 +129,7 @@ export default function MealForm({
     setSuccess("");
 
     try {
+      setloading(true);
       const fd = new FormData();
       fd.append("name", formData.name);
       fd.append("description", formData.description);
@@ -163,7 +166,7 @@ export default function MealForm({
         ingredients: [],
         nutrition: { calories: 0, protein: 0, carbs: 0, fat: 0 },
         imageFile: null,
-        category:[]
+        category: [],
       });
       setSearchQuery("");
       setSuggestions([]);
@@ -172,19 +175,44 @@ export default function MealForm({
     } catch (err) {
       setError(err.response?.data?.error || "Submission failed");
       toast.error("Submission failed");
+    } finally {
+      setloading(false);
     }
   };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className={`${sidebarVisible ? "block" : "hidden"} md:block`}>
-        <button className="toggle-btn" onClick={toggleSidebar}>&#8942;</button>
-        <SidebarComponent visible={sidebarVisible} onLogout={handleLogout} userData={userData} />
-      </div>
+      {UserSidebarComponent && (
+        <div className={`${sidebarVisible ? "block" : "hidden"} md:block`}>
+          <button className="toggle-btn" onClick={toggleSidebar}>
+            &#8942;
+          </button>
+          <UserSidebarComponent
+            visible={sidebarVisible}
+            onLogout={handleLogout}
+            userData={userData}
+          />
+        </div>
+      )}
+      {AdminSidebarComponent && (
+        <div className={`${sidebarVisible ? "block" : "hidden"} md:block`}>
+          <button className="toggle-btn" onClick={toggleSidebar}>
+            &#8942;
+          </button>
+          <AdminSidebarComponent
+            visible={sidebarVisible}
+            onLogout={handleLogout}
+            AdminData={userData}
+          />
+        </div>
+      )}
 
       {/* Main content */}
-      <main className={`flex-grow p-6 transition-all duration-300 ${!sidebarVisible ? "ml-0" : "ml-64"}`}>
+      <main
+        className={`flex-grow p-6 transition-all duration-300 ${
+          !sidebarVisible ? "ml-0" : "ml-64"
+        }`}
+      >
         <button
           className="md:hidden mb-4 text-3xl font-bold focus:outline-none"
           onClick={toggleSidebar}
@@ -197,18 +225,26 @@ export default function MealForm({
           <h2 className="text-2xl font-semibold mb-4">Create New Meal</h2>
 
           {error && <p className="mb-4 text-red-600 font-semibold">{error}</p>}
-          {success && <p className="mb-4 text-green-600 font-semibold">{success}</p>}
+          {success && (
+            <p className="mb-4 text-green-600 font-semibold">{success}</p>
+          )}
 
           <form onSubmit={handleSubmit}>
-
             {/* Meal Name */}
             <div className="mb-4">
-              <label htmlFor="name" className="block mb-1 font-medium text-gray-700">Meal Name</label>
+              <label
+                htmlFor="name"
+                className="block mb-1 font-medium text-gray-700"
+              >
+                Meal Name
+              </label>
               <input
                 id="name"
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((f) => ({ ...f, name: e.target.value }))
+                }
                 required
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
@@ -216,11 +252,18 @@ export default function MealForm({
 
             {/* Description */}
             <div className="mb-4">
-              <label htmlFor="description" className="block mb-1 font-medium text-gray-700">Description</label>
+              <label
+                htmlFor="description"
+                className="block mb-1 font-medium text-gray-700"
+              >
+                Description
+              </label>
               <textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((f) => ({ ...f, description: e.target.value }))
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 rows={3}
               />
@@ -228,7 +271,9 @@ export default function MealForm({
 
             {/* Image */}
             <div className="mb-4">
-              <label className="block mb-1 font-medium text-gray-700">Meal Image</label>
+              <label className="block mb-1 font-medium text-gray-700">
+                Meal Image
+              </label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -240,7 +285,9 @@ export default function MealForm({
 
             {/* Search Ingredient */}
             <div className="mb-6 relative">
-              <label className="block mb-1 font-medium text-gray-700">Search Ingredient</label>
+              <label className="block mb-1 font-medium text-gray-700">
+                Search Ingredient
+              </label>
               <input
                 type="text"
                 value={searchQuery}
@@ -256,7 +303,8 @@ export default function MealForm({
                       onClick={() => handleAddIngredient(item)}
                       className="px-3 py-2 cursor-pointer hover:bg-indigo-100"
                     >
-                      {item.name} ({item.measuringUnit.toUpperCase()}) – {item.calories} kcal
+                      {item.name} ({item.measuringUnit.toUpperCase()}) –{" "}
+                      {item.calories} kcal
                     </li>
                   ))}
                 </ul>
@@ -265,7 +313,9 @@ export default function MealForm({
 
             {/* Added Ingredients */}
             <div className="mb-6">
-              <label className="block mb-1 font-medium text-gray-700">Added Ingredients</label>
+              <label className="block mb-1 font-medium text-gray-700">
+                Added Ingredients
+              </label>
               {formData.ingredients.length === 0 && (
                 <p className="text-gray-500">No ingredients added yet.</p>
               )}
@@ -322,13 +372,22 @@ export default function MealForm({
                 </div>
               ))}
             </div>
-              {/* Category */}
+            {/* Category */}
             <div className="mb-4">
               <label className="block mb-1 font-medium text-gray-700">
                 Categories
               </label>
               <div className="flex flex-wrap gap-3">
-                {["breakfast", "lunch", "dinner", "snack", "main dish", "side dish","dessert","drink"].map((cat) => (
+                {[
+                  "breakfast",
+                  "lunch",
+                  "dinner",
+                  "snack",
+                  "main dish",
+                  "side dish",
+                  "dessert",
+                  "drink",
+                ].map((cat) => (
                   <label key={cat} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -381,22 +440,52 @@ export default function MealForm({
                 <button
                   key={idx}
                   type="submit"
-                  className={`flex-grow py-2 rounded font-semibold text-white ${
-                    onClick ? "bg-indigo-600 hover:bg-indigo-700" : "bg-green-500 hover:bg-green-700"
-                  } transition-colors duration-200`}
+                  disabled={loading}
+                  className={`flex-grow py-2 rounded font-semibold text-white transition-colors duration-200
+    ${
+      loading
+        ? "bg-gray-400 cursor-not-allowed"
+        : onClick
+        ? "bg-indigo-600 hover:bg-indigo-700"
+        : "bg-green-500 hover:bg-green-700"
+    }`}
                   onClick={() => {
                     if (onClick) onClick();
                     else setShare(false);
                   }}
                 >
-                  {text}
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin h-5 w-5 mr-2 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+                        ></path>
+                      </svg>
+                      {text}
+                    </span>
+                  ) : (
+                    text
+                  )}
                 </button>
               ))}
             </div>
           </form>
         </div>
-
-        <ToastContainer />
       </main>
     </div>
   );

@@ -21,22 +21,20 @@ export default function MealPlan() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [overlayLoading, setOverlayLoading] = useState(false);
-
   const [user, setUser] = useState(null);
   const [weekPlan, setWeekPlan] = useState(null);
   const [activeDayIndex, setActiveDayIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [planMissing, setPlanMissing] = useState(false);
-
+  const [regenerateLoading, setRegenerateLoading] = useState({});
   // overlays
   const [selectedMealForPreview, setSelectedMealForPreview] = useState(null);
   const [showCombosFor, setShowCombosFor] = useState(null);
   const [showAddFor, setShowAddFor] = useState(null);
 
   const loadAll = useCallback(async () => {
-    setLoading(true);
-    setPlanMissing(false);
     try {
+      setLoading(true);
       const me = await axios.get(`${API_BASE}/users/me`, {
         headers: HEADERS(),
       });
@@ -52,6 +50,7 @@ export default function MealPlan() {
         setWeekPlan(null);
       } else {
         setWeekPlan(wp);
+        setPlanMissing(false);
         setActiveDayIndex(0);
       }
     } catch (err) {
@@ -159,6 +158,7 @@ export default function MealPlan() {
   };
 
   const handleRegenerateTimedMeal = async (tmId) => {
+    setRegenerateLoading((prev) => ({ ...prev, [tmId]: true }));
     try {
       const res = await axios.post(
         `${API_BASE}/weekPlans/timed-meal/${tmId}/regenerate`,
@@ -170,6 +170,8 @@ export default function MealPlan() {
     } catch (e) {
       console.error("Regenerate failed:", e?.response?.data || e);
       toast.error("Failed to regenerate timed meal");
+    } finally {
+      setRegenerateLoading((prev) => ({ ...prev, [tmId]: false }));
     }
   };
 
@@ -244,7 +246,7 @@ export default function MealPlan() {
       {/* Sticky day tabs + action bar */}
       <div
         className={`sticky top-0 z-40 border-b border-gray-200 bg-white/90 backdrop-blur px-4 sm:px-6 ${
-          sidebarVisible ? "ml-[270px]" : "ml-0"
+          sidebarVisible ? "ml-[19%]" : "ml-[5%]"
         }`}
       >
         <div className="flex items-center justify-between py-3">
@@ -277,9 +279,7 @@ export default function MealPlan() {
         } px-4 sm:px-6 pb-12`}
       >
         {loading ? (
-          <div className="flex h-[60vh] items-center justify-center text-gray-500">
-            Loading…
-          </div>
+          <FullPageLoader visible={loading} />
         ) : planMissing ? (
           <div className="mx-auto mt-10 max-w-2xl rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
             <h3 className="text-lg font-semibold">No meal plan yet</h3>
@@ -315,6 +315,7 @@ export default function MealPlan() {
               onRegenerateTimedMeal={handleRegenerateTimedMeal}
               onRemoveItem={removeItemFromChosen}
               onOpenAddMeal={(tm) => setShowAddFor({ timedMeal: tm })}
+              regenerateLoading={regenerateLoading}   // <-- add this
             />
           </>
         )}

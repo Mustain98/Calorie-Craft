@@ -16,6 +16,9 @@ export default function AdminShowMeals() {
   const [adminData, setAdminData] = useState(null);
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [showNutritionModal, setShowNutritionModal] = useState(false);
+  const [isDeleting, setisDeleting] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const tab = "pending,system";
 
   useEffect(() => {
@@ -67,7 +70,8 @@ export default function AdminShowMeals() {
         : `http://localhost:5001/api/admin/meal/${selectedMeal._id}`;
 
     try {
-      const res=await axios.delete(url, {
+      setisDeleting(true);
+      const res = await axios.delete(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -86,12 +90,15 @@ export default function AdminShowMeals() {
     } catch (err) {
       console.error("Error deleting meal:", err);
       toast.error(err.response?.data?.message || "Failed to delete meal");
+    }finally{
+      setisDeleting(false);
     }
   };
 
   const handleSaveToSystem = async () => {
     const token = localStorage.getItem("token");
     try {
+      isSaving(true);
       const res = await axios.post(
         `http://localhost:5001/api/admin/pending-meals/${selectedMeal._id}`,
         {},
@@ -106,7 +113,11 @@ export default function AdminShowMeals() {
       closeNutritionModal();
     } catch (err) {
       console.error("Failed to save meal to system:", err);
-      toast.error(err.response?.data?.message || "Failed to save meal to system");
+      toast.error(
+        err.response?.data?.message || "Failed to save meal to system"
+      );
+    }finally{
+      setIsSaving(false);
     }
   };
 
@@ -139,6 +150,9 @@ export default function AdminShowMeals() {
           handleDeleteMeal={handleDeleteMeal}
           handleSaveToSystem={handleSaveToSystem}
           activeTab={activeTab}
+          isDeleting={isDeleting}
+          isSaving={isSaving}
+          isSharing={isSharing}
         />
       )}
     </div>

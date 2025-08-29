@@ -16,7 +16,8 @@ export default function TimedMealList({
   onOpenMealPreview,
   onOpenCombos,
   onRemoveItem,
-  onOpenAddMeal
+  onOpenAddMeal,
+  regenerateLoading
 }) {
   if (!timedMeals.length) {
     return (
@@ -37,6 +38,7 @@ export default function TimedMealList({
           onOpenCombos={() => onOpenCombos?.(tm)}
           onRemoveItem={onRemoveItem}
           onOpenAddMeal={() => onOpenAddMeal?.(tm)}   // rename prop onOpenReplace → onOpenAddMeal
+          loading={regenerateLoading[tm._id] || false}  // <-- pass per-card
         />
       ))}
     </section>

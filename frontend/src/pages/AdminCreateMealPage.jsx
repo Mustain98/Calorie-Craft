@@ -8,7 +8,7 @@ export default function AdminCreateMeal() {
       apiBaseUrl="http://localhost:5001"
       userEndpoint="/api/admin/me"
       submitEndpoint="/api/admin/meal"
-      SidebarComponent={AdminSidebar}
+      AdminSidebarComponent={AdminSidebar}
       loginRedirectPath="/adminsignin"
       successMessages={{
         saved: "Meal saved successfully!",

@@ -17,6 +17,9 @@ export default function ShowAllMeal() {
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [showNutritionModal, setShowNutritionModal] = useState(false);
   const [loadingMeal, setLoadingMeal] = useState(false);
+  const [isDeleting, setisDeleting] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const tab = "my,all";
 
   useEffect(() => {
@@ -90,6 +93,7 @@ export default function ShowAllMeal() {
   const handleDeleteMeal = async () => {
     const token = localStorage.getItem("token");
     try {
+      setisDeleting(true);
       await axios.delete(
         `${process.env.REACT_APP_API_BASE_URL}/api/users/me/myMeals/${selectedMeal._id}`,
         {
@@ -101,12 +105,15 @@ export default function ShowAllMeal() {
       closeNutritionModal();
     } catch (err) {
       toast.error("Failed to delete meal");
+    }finally{
+      setisDeleting(false);
     }
   };
 
 const handleSaveToMyMeals = async (meal) => {
   const token = localStorage.getItem("token");
   try {
+    setIsSaving(true);
     const payload = {
       name: meal.name,
       description: meal.description || "",
@@ -136,20 +143,25 @@ const handleSaveToMyMeals = async (meal) => {
     toast.success(res.data.message || "Meal saved to your collection");
   } catch (err) {
     toast.error(err.response?.data?.error || "Failed to save meal");
+  }finally{
+    setIsSaving(false);
   }
 };
 
   const handleShareMeal = async () => {
     const token = localStorage.getItem("token");
     try {
+      setIsSharing(true);
       const res=await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/api/users/me/shareMeal/${selectedMeal._id}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success(res.data.message || "Meal shared successfully");
+      toast.success("Meal shared successfully");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to share meal");
+      toast.error("Failed to share meal");
+    }finally{
+      setIsSharing(false);
     }
   };
 
@@ -183,6 +195,9 @@ const handleSaveToMyMeals = async (meal) => {
           handleSaveToMyMeals={handleSaveToMyMeals}
           handleShareMeal={handleShareMeal}
           activeTab={activeTab}
+          isDeleting={isDeleting}
+          isSharing={isSharing}
+          isSaving={isSaving}
         />
       )}
     </div>

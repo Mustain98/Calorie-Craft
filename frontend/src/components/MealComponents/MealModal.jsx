@@ -1,4 +1,5 @@
 import React from "react";
+import LoadingEffect from "../LoadingEffect";
 
 export default function MealModal({
   closeNutritionModal,
@@ -7,8 +8,10 @@ export default function MealModal({
   handleDeleteMeal,
   handleSaveToMyMeals,
   handleShareMeal,
-  isSharing,
   handleSaveToSystem,
+  isDeleting,
+  isSaving,
+  isSharing,
 }) {
   if (!selectedMeal) return null;
 
@@ -127,10 +130,16 @@ export default function MealModal({
           {activeTab === "all" && (
             <button
               onClick={() => handleSaveToMyMeals(selectedMeal)}
-              className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md transition"
               type="button"
+              disabled={isSaving}
+              className={`bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md transition
+                ${
+                  isSaving ? "bg-green-700 cursor-not-allowed" : "bg-green-600"
+                }`}
             >
-              Save to My Meals
+              {isSaving
+                ? LoadingEffect({ text: "Saving to My Meals" })
+                : "Save to My Meals"}
             </button>
           )}
 
@@ -138,20 +147,26 @@ export default function MealModal({
             <>
               <button
                 onClick={() => handleDeleteMeal(selectedMeal._id)}
-                className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-md transition"
                 type="button"
+                disabled={isDeleting}
+                className={`bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-md transition
+                  ${
+                    isDeleting ? "bg-red-700 cursor-not-allowed" : "bg-red-600"
+                  }`}
               >
-                Delete from My Meals
+                {isDeleting
+                  ? LoadingEffect({ text: "Deleting From My Meals" })
+                  : "Delete from My Meals"}
               </button>
               <button
                 onClick={() => handleShareMeal(selectedMeal._id)}
                 disabled={isSharing}
                 className={`bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md transition ${
-                  isSharing ? "opacity-50 cursor-not-allowed" : ""
+                  isSharing ? "bg-blue-700 cursor-not-allowed" : ""
                 }`}
                 type="button"
               >
-                {isSharing ? "Sharing..." : "Share Meal"}
+                {isSharing ? LoadingEffect({ text: "Sharing" }) : "Share Meal"}
               </button>
             </>
           )}
@@ -160,17 +175,27 @@ export default function MealModal({
             <>
               <button
                 onClick={() => handleSaveToSystem(selectedMeal._id)}
-                className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md transition"
+                disabled={isSaving}
                 type="button"
+                className={`bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md transition
+                ${
+                  isSaving ? "bg-green-700 cursor-not-allowed" : "bg-green-600"
+                }`}
               >
-                Save to System
+                {isSaving
+                  ? LoadingEffect({ text: "Saving to System Collection" })
+                  : "Save to System Collection"}
               </button>
               <button
                 onClick={() => handleDeleteMeal(selectedMeal._id)}
-                className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-md transition"
+                disabled={isDeleting}
                 type="button"
+                className={`bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-md transition
+                ${isDeleting ? "bg-red-700 cursor-not-allowed" : "bg-red-600"}`}
               >
-                Delete from Pending
+                {isDeleting
+                  ? LoadingEffect({ text: "Deleting From Pending" })
+                  : "Delete from Pending"}
               </button>
             </>
           )}
@@ -178,10 +203,14 @@ export default function MealModal({
           {activeTab === "system" && (
             <button
               onClick={() => handleDeleteMeal(selectedMeal._id)}
-              className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-md transition"
               type="button"
+              disabled={isDeleting}
+              className={`bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-md transition
+              ${isDeleting ? "bg-red-700 cursor-not-allowed" : "bg-red-600"}`}
             >
-              Delete from System
+              {isDeleting
+                ? LoadingEffect({ text: "Deleting From System Collection" })
+                : "Delete from System Collection"}
             </button>
           )}
         </section>
@@ -189,4 +218,3 @@ export default function MealModal({
     </div>
   );
 }
- 
