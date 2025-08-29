@@ -67,7 +67,9 @@ export default function SignupPage() {
       toast.error("Registration failed.");
     }
   };
-
+  const handleNavigateToSignin=async()=>{
+    navigate('/signin');
+  }
   return (
     <div className="signup-page">
       <LeftSection />
@@ -177,6 +179,12 @@ export default function SignupPage() {
           {success && <p className="success-text">{success}</p>}
 
           <button type="submit">Sign up</button>
+          <p className="signup-link">
+            Already have an account?{" "}
+            <span className="link-text" onClick={handleNavigateToSignin}>
+              Sign in here
+            </span>
+          </p>
         </form>
       </div>
     </div>
