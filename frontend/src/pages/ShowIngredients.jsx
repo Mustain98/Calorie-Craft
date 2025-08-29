@@ -30,7 +30,7 @@ export default function ShowIngredients() {
     if (!token) return navigate("/adminsignin");
 
     axios
-      .get("http://localhost:5001/api/admin/me", {
+      .get(`${process.env.REACT_APP_API_ADMIN_URL}/api/admin/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setAdminData(res.data))
@@ -44,9 +44,9 @@ export default function ShowIngredients() {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        let url = "http://localhost:5001/api/fooditem/";
+        let url = `${process.env.REACT_APP_API_ADMIN_URL}/api/fooditem/`;
         if (selectedCategory !== "all") {
-          url = `http://localhost:5001/api/fooditem/by_category/${selectedCategory}`;
+          url = `${process.env.REACT_APP_API_ADMIN_URL}/api/fooditem/by_category/${selectedCategory}`;
         }
 
         const res = await axios.get(url);
@@ -73,7 +73,7 @@ export default function ShowIngredients() {
     try {
       const token = localStorage.getItem("token");
 
-      await axios.delete(`http://localhost:5001/api/fooditem/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_API_ADMIN_URL}/api/fooditem/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

@@ -20,7 +20,7 @@ export default function AdminProfilePage() {
 
       const fetchAdmin = async () => {
         try {
-          const res = await axios.get('http://localhost:5001/api/admin/me', {
+          const res = await axios.get(`${process.env.REACT_APP_API_ADMIN_URL}/api/admin/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           setAdminData(res.data);

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import Sidebar from "../components/sideBar";
 import MealForm from "../components/MealComponents/mealForm";
+import {toast} from 'react-toastify';
+import "react-toastify/dist/ReactToastify.css";
 
 export default function CreateMeal() {
   const [share, setShare] = useState(false);
@@ -10,7 +12,7 @@ export default function CreateMeal() {
       apiBaseUrl={process.env.REACT_APP_API_BASE_URL}
       userEndpoint="/api/users/me"
       submitEndpoint="/api/users/me/myMeals"
-      SidebarComponent={Sidebar}
+      UserSidebarComponent={Sidebar}
       loginRedirectPath="/signin"
       successMessages={{
         saved: "Meal saved successfully!",

@@ -5,6 +5,15 @@ import MealCard from "../MealComponents/MealCard";
 import { formatFraction } from "./utils";
 import TimedMealMenu from "./TimedMealMenu";
 
+// Simple loader component (you can replace with your preferred spinner)
+function CardLoader() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-50">
+      <div className="w-6 h-6 border-4 border-gray-300 border-t-lime-500 rounded-full animate-spin"></div>
+    </div>
+  );
+}
+
 function MenuPortal({ anchorRect, onClose, children, width = 220 }) {
   if (!anchorRect) return null;
   const padding = 8;
@@ -33,7 +42,8 @@ export default function TimedMealCard({
   onOpenMealPreview,
   onOpenCombos,
   onRemoveItem,
-  onOpenAddMeal
+  onOpenAddMeal,
+  loading // <-- per-card loading prop
 }) {
   const chosen = tm?.choosenCombo || { meals: [] };
   const [menuOpen, setMenuOpen] = useState(false);
@@ -50,7 +60,11 @@ export default function TimedMealCard({
   const anchorRect = btnRef.current?.getBoundingClientRect();
 
   return (
-    <div className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200">
+    <div className="relative rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200">
+      {/* Loading overlay */}
+      {loading && <CardLoader />}
+
+      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <span className="text-xs uppercase tracking-wide text-gray-500">{tm.type}</span>
@@ -70,7 +84,7 @@ export default function TimedMealCard({
 
       {/* Chosen combo items */}
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(chosen.meals || []).map((it, idx) => {
+        {(chosen.meals || []).map((it, idx) => {
           const mealDoc = it.meal || it.userMeal || it; // populated system or user meal
           const qty = Number(it.quantity || 0);
 
@@ -99,11 +113,11 @@ export default function TimedMealCard({
         )}
       </div>
 
+      {/* Menu portal */}
       {menuOpen && (
         <MenuPortal anchorRect={anchorRect} onClose={() => setMenuOpen(false)}>
           <TimedMealMenu
             onClose={() => setMenuOpen(false)}
-            // per your request: NO replace option here
             onRegenerate={() => {
               setMenuOpen(false);
               onRegenerate?.(tm._id);
@@ -112,7 +126,7 @@ export default function TimedMealCard({
               setMenuOpen(false);
               onOpenCombos?.(tm);
             }}
-            onOpenAddMeal={() =>{
+            onOpenAddMeal={() => {
               setMenuOpen(false);
               onOpenAddMeal?.(tm);
             }}

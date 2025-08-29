@@ -5,10 +5,10 @@ import MealForm from "../components/MealComponents/mealForm";
 export default function AdminCreateMeal() {
   return (
     <MealForm
-      apiBaseUrl="http://localhost:5001"
+      apiBaseUrl={process.env.REACT_APP_API_ADMIN_URL}
       userEndpoint="/api/admin/me"
       submitEndpoint="/api/admin/meal"
-      SidebarComponent={AdminSidebar}
+      AdminSidebarComponent={AdminSidebar}
       loginRedirectPath="/adminsignin"
       successMessages={{
         saved: "Meal saved successfully!",
