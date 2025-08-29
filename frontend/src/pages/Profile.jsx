@@ -108,7 +108,19 @@ export default function ProfilePage() {
             <input type="text" name="height" value={formData.height || ''} onChange={handleChange} />
 
             <label>Activity Level</label>
-            <input type="text" name="activityLevel" value={formData.activityLevel || ''} onChange={handleChange} />
+            <select
+              name="activityLevel"
+              value={formData.activityLevel}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select activity level</option>
+              <option value="sedentary">Sedentary</option>
+              <option value="light">Lightly active</option>
+              <option value="moderate">Moderately active</option>
+              <option value="active">Active</option>
+              <option value="very active">Very active</option>
+            </select>
 
             <button
               type="button"
