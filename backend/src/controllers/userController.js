@@ -224,22 +224,47 @@ const shareMeal = async (req, res) => {
   }
 };
 
-const updatePassword =async (req,res) =>{
-  try{
+const updatePassword = async (req, res) => {
+  try {
     const user = await User.findById(req.user.id).select('+password');
-    const {currentPassword,newPassword}=req.body;
+    const { currentPassword, newPassword } = req.body;
+    
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required' });
+    }
+    
+    // Verify current password
     const isMatch = await user.matchPassword(currentPassword);
-    if(!isMatch)return res.status(401).json({error: 'Current Password is incorrect'});
-    user.password=newPassword;
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+    
+    // Check if new password is the same as current
+    const isSamePassword = await user.matchPassword(newPassword);
+    if (isSamePassword) {
+      return res.status(400).json({ error: 'New password cannot be the same as current password' });
+    }
+    
+    // Password validation: at least 6 chars, one uppercase, one lowercase, one digit
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({ 
+        error: 'Password must contain at least 6 characters, one uppercase letter, one lowercase letter, and one number' 
+      });
+    }
+    
+    // Update password
+    user.password = newPassword;
     await user.save();
-    return res.status(200).json({message:'Password updated successfully'});
+    
+    return res.status(200).json({ message: 'Password updated successfully' });
 
-  }catch(err){
+  } catch (err) {
     console.error('Password update error:', err);
     res.status(500).json({ error: 'Failed to update password' });
   }
 };
-
 //show timed meal configuration
 const showTimedMealConfiguration =async (req,res)=>{
   try{

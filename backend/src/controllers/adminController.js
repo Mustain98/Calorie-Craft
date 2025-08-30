@@ -159,6 +159,58 @@ const deletePendingMeal = async (req, res) => {
   }
 };
 
+//change password
+const updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+    }
+
+    // Find admin with password field included - FIXED: changed req.Admin to req.admin
+    const admin = await Admin.findById(req.admin.id).select('+password');
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin not found' });
+    }
+
+    // Verify current password
+    const isMatch = await admin.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+    
+    // Check if new password is the same as current
+    const isSamePassword = await admin.matchPassword(newPassword);
+    if (isSamePassword) {
+      return res.status(400).json({ error: 'New password cannot be the same as current password' });
+    }
+    
+    // Password complexity validation
+    // Allow common special characters
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({ 
+        error: 'Password must contain at least 8 characters, one uppercase, one lowercase, one number and one special character' 
+      });
+    }
+
+    // Update password
+    admin.password = newPassword;
+    await admin.save();
+
+    return res.status(200).json({ message: 'Password updated successfully' });
+
+  } catch (err) {
+    console.error('Password update error:', err);
+    res.status(500).json({ error: 'Failed to update password' });
+  }
+};
 module.exports = {
   createAdmin,
   adminLogin,
@@ -170,5 +222,6 @@ module.exports = {
   updateMeal,
   deleteFoodItem,
   deleteMeal,
-  getCurrentAdmin
+  getCurrentAdmin,
+  updatePassword
 };
