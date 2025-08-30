@@ -90,7 +90,7 @@ EmbeddedMealSchema.pre('save', async function (next) {
 
 const EmbeddedTimedMealConfig =new mongoose.Schema({
   name:{type:String,required:true},
-    type: { 
+  type: { 
     type: String, 
     enum: ["breakfast", "lunch", "dinner", "snack", "brunch", "supper"], 
     required: true 
@@ -116,7 +116,7 @@ const UserSchema = new mongoose.Schema({
     calories: Number,
     protein: Number,
     carbs: Number,
-    fats: Number
+    fats: Number,
   },
   myMeals: [EmbeddedMealSchema],
   timedMealConfig: {

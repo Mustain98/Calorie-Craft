@@ -1,0 +1,137 @@
+/* Optional wrapper to take full parent height */
+.slider-container-wrapper {
+  width: 100%;
+  height: 100%; /* fills parent from MealPage */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* Keep the rest as-is */
+.slider-container {
+  flex: 1;              /* take up full height of parent */
+  max-width: 36rem;
+  padding: 1.5rem;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  background: #fff;      /* ensure consistent background */
+  border-radius: 0.5rem; /* optional: match card style */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+
+/* Make sliders scrollable if too many */
+.slider-content {
+  /* overflow-y: auto;  remove this */
+  /* flex: 1;           optional, remove if needed */
+  padding-right: 0.5rem;
+}
+
+
+/* Number input */
+.meal-input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1.125rem; /* text-lg */
+  margin-bottom: 1.5rem;
+  border: 1px solid #d1d5db; /* border-gray-300 */
+  border-radius: 0.375rem; /* rounded */
+  outline: none;
+}
+
+.meal-input:focus {
+  box-shadow: 0 0 0 2px #3b82f6; /* focus:ring-blue-500 */
+  border-color: #3b82f6;
+}
+
+/* Slider card */
+.slider-card {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+}
+
+/* Slider label */
+.slider-card label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+/* Slider track & thumb */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 12px;
+  border-radius: 6px;
+  background: #ddd;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: currentColor;
+  cursor: pointer;
+  margin-top: -6px;
+  border: 2px solid #999;
+  transition: background-color 0.3s ease;
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  background: #555;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: currentColor;
+  cursor: pointer;
+  border: 2px solid #999;
+  transition: background-color 0.3s ease;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    to right,
+    currentColor 0%,
+    currentColor var(--percent),
+    #ddd var(--percent),
+    #ddd 100%
+  );
+}
+
+input[type="range"]::-moz-range-track {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    to right,
+    currentColor 0%,
+    currentColor var(--percent),
+    #ddd var(--percent),
+    #ddd 100%
+  );
+}
+
+/* Submit button */
+.submit-btn {
+  display: block;
+  margin: 0 auto;
+  background-color: #22c55e; /* green-400 */
+  color: white;
+  border-radius: 9999px; /* full */
+  padding: 0.5rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.submit-btn:hover {
+  background-color: #166534; /* green-800 */
+}

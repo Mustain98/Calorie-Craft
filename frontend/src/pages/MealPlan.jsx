@@ -1,330 +1,358 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./MealPlan.css";
 import axios from "axios";
-import logo from "../logo.png";
 import Sidebar from "../components/sideBar";
+
+const API_BASE = "http://localhost:4000/api";
+const Q_STEP = 0.25;
 
 export default function MealPlan() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [selectedMeal, setSelectedMeal] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [userdata,setUserData] = useState();
+  const [userData, setUserData] = useState(null);
+  const [weekPlan, setWeekPlan] = useState(null);
+  const [activeDayIndex, setActiveDayIndex] = useState(0);
 
+  // modal state for a specific timed meal
+  const [openTimedMeal, setOpenTimedMeal] = useState(null); // the full timedMeal doc
+
+  const weekDays = useMemo(
+    () => ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+    []
+  );
+
+  const headers = () => ({
+    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+  });
+
+  // Load user + my current week plan
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return navigate("/signin");
 
-    const fetchUser = async () => {
+    (async () => {
       try {
-        const res = await axios.get("http://localhost:4000/api/users/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUserData(res.data);
-        
+        const me = await axios.get(`${API_BASE}/users/me`, { headers: headers() });
+        setUserData(me.data);
+
+        const wp = await axios.get(`${API_BASE}/week-plan/me`, { headers: headers() });
+        setWeekPlan(wp.data?.weekPlan || wp.data); // support either {weekPlan} or raw
       } catch (err) {
-        console.error("Failed to fetch user:", err);
+        console.error("[MealPlan] fetch error:", err?.response?.data || err);
         localStorage.removeItem("token");
         navigate("/signin");
       }
-    };
-
-    fetchUser();
+    })();
   }, [navigate]);
 
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
+  const toggleSidebar = () => setSidebarVisible((v) => !v);
+
+  const dayObj = weekPlan?.days?.[activeDayIndex] || null;
+  const timedMeals = dayObj?.timedMeals || [];
+
+  // Totals for the active day — we can sum chosen combo macros or use day totals if provided
+  const dayTotals = useMemo(() => {
+    if (!timedMeals.length) return { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    return timedMeals.reduce(
+      (t, tm) => {
+        t.calories += Number(tm.totalCalories || 0);
+        t.protein  += Number(tm.totalProtein  || 0);
+        t.carbs    += Number(tm.totalCarbs    || 0);
+        t.fat      += Number(tm.totalFat      || 0);
+        return t;
+      },
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+  }, [timedMeals]);
+
+  // --- Actions on a timed meal ---
+
+  // swap chosen combo to an index in mealCombos
+  const chooseComboIndex = async (tmId, index) => {
+    try {
+      const res = await axios.patch(
+        `${API_BASE}/timed-meals/${tmId}`,
+        { chooseIndex: index },
+        { headers: headers() }
+      );
+      // update local state
+      patchTimedMealInState(res.data);
+    } catch (err) {
+      console.error("[chooseComboIndex] failed:", err?.response?.data || err);
+      alert("Failed to choose combo");
+    }
   };
 
-  const handleLogout = () => {
-    navigate("/login");
+  // replace chosen combo with a custom combo object
+  const replaceChosenCombo = async (tmId, combo) => {
+    try {
+      const res = await axios.patch(
+        `${API_BASE}/timed-meals/${tmId}`,
+        { choosenCombo: combo },
+        { headers: headers() }
+      );
+      patchTimedMealInState(res.data);
+    } catch (err) {
+      console.error("[replaceChosenCombo] failed:", err?.response?.data || err);
+      alert("Failed to update chosen combo");
+    }
   };
 
-  const handleMealClick = (meal, dayName) => {
-    setSelectedMeal({ ...meal, day: dayName });
-    setShowModal(true);
+  // add a meal to chosen combo (quantity default 0.25)
+  const addMealToChosen = async (tm, mealId) => {
+    const chosen = tm.choosenCombo || { meals: [], cost: 0 };
+    const next = {
+      ...chosen,
+      meals: [...(chosen.meals || []), { meal: mealId, quantity: Q_STEP }],
+    };
+    await replaceChosenCombo(tm._id, next);
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedMeal(null);
+  // increment/decrement quantity of an item in chosen combo by 0.25
+  const adjQty = async (tm, itemIndex, delta) => {
+    const chosen = tm.choosenCombo || { meals: [], cost: 0 };
+    const items = [...(chosen.meals || [])];
+    const cur = Number(items[itemIndex]?.quantity || 0);
+    const nextQty = Math.max(Q_STEP, +(cur + delta).toFixed(2));
+    items[itemIndex] = { ...items[itemIndex], quantity: nextQty };
+    await replaceChosenCombo(tm._id, { ...chosen, meals: items });
   };
 
-  const weekDays = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
-
-  const nutritionSummary = {
-    calories: 1554,
-    fat: "51g",
-    carbs: "123g",
-    fiber: "21g",
-    sugar: "37g",
-    protein: "72g",
+  // state helper: replace a timedMeal within weekPlan after server returns updated doc
+  const patchTimedMealInState = (updatedTm) => {
+    setWeekPlan((prev) => {
+      if (!prev?.days) return prev;
+      const nextDays = prev.days.map((d) => ({
+        ...d,
+        timedMeals: (d.timedMeals || []).map((tm) =>
+          String(tm._id) === String(updatedTm._id) ? updatedTm : tm
+        ),
+      }));
+      return { ...prev, days: nextDays };
+    });
+    // also refresh the open modal if it's the same TM
+    setOpenTimedMeal((cur) =>
+      cur && String(cur._id) === String(updatedTm._id) ? updatedTm : cur
+    );
   };
 
-  const mealsByDay = weekDays.map((day) => ({
-    day,
-    meals: [
-      {
-        label: "Breakfast",
-        name: "Chicken Breast",
-        weight: "200 gm",
-        image:
-          "https://images.unsplash.com/photo-1532636721503-4ab8c4f98044?w=200&h=150&fit=crop",
-        nutrition: {
-          calories: { value: 264, percentage: 12 },
-          fat: { value: "0g", percentage: 0 },
-          carbs: { value: "34g", percentage: 16 },
-          fiber: { value: "9g", percentage: 43 },
-          sugar: { value: "3g", percentage: 10 },
-          protein: { value: "3g", percentage: 14 },
-          cholesterol: { value: "10mg", percentage: 20 },
-          vitaminA: { value: "932mg", percentage: 26 },
-          vitaminC: { value: "13mg", percentage: 14 },
-        },
-      },
-      {
-        label: "Snack - 1",
-        name: "Peanut Butter Bites",
-        weight: "50 gm",
-        image:
-          "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=200&h=150&fit=crop",
-        nutrition: {
-          calories: { value: 180, percentage: 8 },
-          fat: { value: "12g", percentage: 15 },
-          carbs: { value: "8g", percentage: 4 },
-          fiber: { value: "3g", percentage: 12 },
-          sugar: { value: "5g", percentage: 8 },
-          protein: { value: "8g", percentage: 16 },
-        },
-      },
-      {
-        label: "Lunch",
-        name: "Chicken Breast",
-        weight: "200 gm",
-        image:
-          "https://images.unsplash.com/photo-1532636721503-4ab8c4f98044?w=200&h=150&fit=crop",
-        nutrition: {
-          calories: { value: 264, percentage: 12 },
-          fat: { value: "5g", percentage: 6 },
-          carbs: { value: "0g", percentage: 0 },
-          fiber: { value: "0g", percentage: 0 },
-          sugar: { value: "0g", percentage: 0 },
-          protein: { value: "49g", percentage: 98 },
-        },
-      },
-      {
-        label: "Snack - 2",
-        name: "Crackers & Hummus",
-        weight: "75 gm",
-        image:
-          "https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?w=200&h=150&fit=crop",
-        nutrition: {
-          calories: { value: 150, percentage: 7 },
-          fat: { value: "6g", percentage: 8 },
-          carbs: { value: "20g", percentage: 9 },
-          fiber: { value: "4g", percentage: 16 },
-          sugar: { value: "2g", percentage: 3 },
-          protein: { value: "5g", percentage: 10 },
-        },
-      },
-      {
-        label: "Dinner",
-        name: "Grilled Salmon",
-        weight: "150 gm",
-        image:
-          "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=200&h=150&fit=crop",
-        nutrition: {
-          calories: { value: 231, percentage: 11 },
-          fat: { value: "11g", percentage: 14 },
-          carbs: { value: "0g", percentage: 0 },
-          fiber: { value: "0g", percentage: 0 },
-          sugar: { value: "0g", percentage: 0 },
-          protein: { value: "31g", percentage: 62 },
-        },
-      },
-      {
-        label: "Snack - 3",
-        name: "Fruit Bowl",
-        weight: "100 gm",
-        image:
-          "https://images.unsplash.com/photo-1546173159-315724a31696?w=200&h=150&fit=crop",
-        nutrition: {
-          calories: { value: 89, percentage: 4 },
-          fat: { value: "0g", percentage: 0 },
-          carbs: { value: "23g", percentage: 11 },
-          fiber: { value: "3g", percentage: 12 },
-          sugar: { value: "18g", percentage: 25 },
-          protein: { value: "1g", percentage: 2 },
-        },
-      },
-    ],
-  }));
+  // picker: get meals from user collection or system
+  const fetchUserMeals = async () => {
+    const res = await axios.get(`${API_BASE}/users/me/myMeals`, { headers: headers() });
+    return res.data || [];
+  };
+  const searchSystemMeals = async (q) => {
+    const res = await axios.get(`${API_BASE}/meal/search`, {
+      params: { q },
+    });
+    return res.data || [];
+  };
 
   return (
     <div className="meal-plan-page">
-      {/* Toggle Sidebar Button */}
-      <button className="toggle-btn" onClick={toggleSidebar}>
-        &#8942;
-      </button>
+      <button className="toggle-btn" onClick={toggleSidebar}>⋮</button>
+      {userData && <Sidebar visible={sidebarVisible} userData={userData} />}
 
-      {/* Sidebar */}
-      {sidebarVisible && (
+      {/* Day tabs like your collection tabs */}
+      <div className={`view-toggle-bar ${!sidebarVisible ? "sidebar-hidden" : ""}`}>
+        {weekDays.map((d, i) => (
+          <button
+            key={d}
+            className={i === activeDayIndex ? "active" : ""}
+            onClick={() => setActiveDayIndex(i)}
+          >
+            {d}
+          </button>
+        ))}
+      </div>
 
-        <Sidebar visible={sidebarVisible} userData={userdata} />
-
-      )}
-
-      {/* Main Content */}
-      <main
-        className={`meal-plan-content ${
-          !sidebarVisible ? "sidebar-hidden" : ""
-        }`}
-      >
-        {/* Nutrition Summary */}
-        <div className="nutrition-summary-row">
-          {weekDays.map((_, i) => (
-            <div key={i} className="nutrition-col">
-              <strong>Calories</strong> {nutritionSummary.calories} <br />
-              <span className="dot red" /> {nutritionSummary.fat} fat
-              <br />
-              <span className="dot orange" /> {nutritionSummary.carbs} carbs
-              <br />
-              <span className="dot green" /> {nutritionSummary.fiber} fiber
-              <br />
-              <span className="dot blue" /> {nutritionSummary.sugar} sugar
-              <br />
-              <span className="dot purple" /> {nutritionSummary.protein} protein
+      <main className={`meal-plan-content ${!sidebarVisible ? "sidebar-hidden" : ""}`}>
+        {!weekPlan ? (
+          <div>Loading week plan…</div>
+        ) : (
+          <>
+            {/* Daily totals */}
+            <div className="nutrition-summary-row" style={{ marginBottom: 16 }}>
+              <div className="nutrition-col">
+                <strong>Calories</strong> {dayTotals.calories}
+              </div>
+              <div className="nutrition-col">
+                <strong>Protein</strong> {dayTotals.protein} g
+              </div>
+              <div className="nutrition-col">
+                <strong>Carbs</strong> {dayTotals.carbs} g
+              </div>
+              <div className="nutrition-col">
+                <strong>Fat</strong> {dayTotals.fat} g
+              </div>
             </div>
-          ))}
-        </div>
 
-        {/* Meal Grid */}
-        <div className="meal-grid">
-          {mealsByDay.map((dayBlock, i) => (
-            <div key={i} className="day-column">
-              <h4>{dayBlock.day}</h4>
-              {dayBlock.meals.map((meal, idx) => (
-                <div
-                  key={idx}
-                  className="meal-card clickable"
-                  onClick={() => handleMealClick(meal, dayBlock.day)}
-                >
-                  <img src={meal.image} alt={meal.name} />
-                  <div>
-                    <small>{meal.label}</small>
-                    <p>{meal.name}</p>
+            {/* Timed meals for the day */}
+            <div className="meal-grid" style={{ gridTemplateColumns: "1fr", gap: 12 }}>
+              {timedMeals.map((tm) => (
+                <div key={tm._id} className="meal-card clickable" onClick={() => setOpenTimedMeal(tm)}>
+                  <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                    <div>
+                      <small>{tm.type}</small>
+                      <p style={{ margin: 0, fontWeight: 600 }}>{tm.name}</p>
+                      <div style={{ fontSize: 12, color: "#666" }}>
+                        {Math.round(tm.totalCalories)} kcal • P {Math.round(tm.totalProtein)} • C {Math.round(tm.totalCarbs)} • F {Math.round(tm.totalFat)}
+                      </div>
+                    </div>
+                    <button className="options-btn" onClick={(e) => { e.stopPropagation(); setOpenTimedMeal(tm); }}>
+                      ⋮
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </main>
 
-      {/* Modal */}
-      {showModal && selectedMeal && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="modal-header">
-              <button className="back-btn" onClick={closeModal}>
-                ←
-              </button>
-              <h3>{selectedMeal.day} Meal Plan</h3>
-            </div>
+      {/* Timed Meal modal */}
+      {openTimedMeal && (
+        <TimedMealModal
+          tm={openTimedMeal}
+          onClose={() => setOpenTimedMeal(null)}
+          onChooseIndex={chooseComboIndex}
+          onAddMeal={addMealToChosen}
+          onAdjustQty={adjQty}
+          fetchUserMeals={fetchUserMeals}
+          searchSystemMeals={searchSystemMeals}
+        />
+      )}
+    </div>
+  );
+}
 
-            <div className="modal-body">
-              {/* Left Side - Meals */}
-              <div className="modal-left">
-                <div className="section-tag meals-tag">Meals</div>
+/* -------- Modal component (inline for brevity) -------- */
+function TimedMealModal({
+  tm,
+  onClose,
+  onChooseIndex,
+  onAddMeal,
+  onAdjustQty,
+  fetchUserMeals,
+  searchSystemMeals,
+}) {
+  const [userMeals, setUserMeals] = useState([]);
+  const [sysQuery, setSysQuery] = useState("");
+  const [sysMeals, setSysMeals] = useState([]);
 
-                <div className="meals-container">
-                  <div className="meal-detail-card">
-                    <div className="meal-detail-header">
-                      <h4>{selectedMeal.label}</h4>
-                      <button className="options-btn">⋮</button>
-                    </div>
+  useEffect(() => {
+    (async () => {
+      try { setUserMeals(await fetchUserMeals()); } catch {}
+    })();
+  }, [fetchUserMeals]);
 
-                    <div className="meal-detail-content">
-                      <img
-                        src={selectedMeal.image}
-                        alt={selectedMeal.name}
-                        className="meal-detail-image"
-                      />
-                      <div className="meal-detail-info">
-                        <div className="meal-name">{selectedMeal.name}</div>
-                        <div className="meal-weight">{selectedMeal.weight}</div>
+  const searchSys = async (e) => {
+    e.preventDefault();
+    try { setSysMeals(await searchSystemMeals(sysQuery)); } catch {}
+  };
+
+  const chosen = tm?.choosenCombo || { meals: [] };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e)=>e.stopPropagation()}>
+        <div className="modal-header">
+          <button className="back-btn" onClick={onClose}>←</button>
+          <h3>{tm.name} — {tm.type}</h3>
+        </div>
+
+        <div className="modal-body">
+          {/* Left: chosen combo + edit */}
+          <div className="modal-left">
+            <div className="section-tag meals-tag">Chosen combo</div>
+            <div className="meals-container">
+              {(chosen.meals || []).map((it, idx) => (
+                <div key={idx} className="meal-detail-card" style={{ marginBottom: 8 }}>
+                  <div className="meal-detail-content">
+                    <img
+                      src={it.meal?.imageUrl || it.meal?.image}
+                      alt={it.meal?.name}
+                      className="meal-detail-image"
+                    />
+                    <div className="meal-detail-info">
+                      <div className="meal-name">{it.meal?.name || "Meal"}</div>
+                      <div className="meal-weight">
+                        Qty: {Number(it.quantity || 0).toFixed(2)}x
                       </div>
-                      <button className="options-btn">⋮</button>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button className="options-btn" onClick={() => onAdjustQty(tm, idx, -Q_STEP)}>-</button>
+                      <button className="options-btn" onClick={() => onAdjustQty(tm, idx, +Q_STEP)}>+</button>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Right Side - Nutrition */}
-              <div className="modal-right">
-                <div className="section-tag nutrition-tag">Nutritions</div>
-
-                <div className="nutrition-container">
-                  {selectedMeal.nutrition &&
-                    Object.entries(selectedMeal.nutrition).map(
-                      ([key, value]) => (
-                        <div key={key} className="nutrition-item">
-                          <span className="nutrition-name">{key}</span>
-                          <div className="nutrition-details">
-                            <div className="progress-bar">
-                              <div
-                                className={`progress-fill ${
-                                  value.percentage > 50
-                                    ? "high"
-                                    : value.percentage > 25
-                                    ? "medium"
-                                    : "low"
-                                }`}
-                                style={{
-                                  width: `${Math.min(value.percentage, 100)}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="nutrition-value">
-                              {value.value}
-                            </span>
-                            <span className="nutrition-percentage">
-                              {value.percentage}%
-                            </span>
-                          </div>
-                        </div>
-                      )
-                    )}
-
-                  <button className="more-btn">More</button>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="action-buttons">
-              <div className="action-menu">
-                <div className="action-text">meal click optio...</div>
-                <div className="action-options">
-                  <div className="action-option">remove</div>
-                  <div className="action-option">Edit</div>
-                  <div className="action-option">options</div>
-                </div>
-              </div>
+              ))}
+              {!chosen.meals?.length && <div>No items in chosen combo.</div>}
             </div>
           </div>
+
+          {/* Right: other combos + add from collections */}
+          <div className="modal-right">
+            <div className="section-tag nutrition-tag">Other combos</div>
+            <div className="nutrition-container" style={{ marginBottom: 16 }}>
+              {(tm.mealCombos || []).map((c, i) => (
+                <div key={i} className="nutrition-item" style={{ alignItems: "center" }}>
+                  <span className="nutrition-name">Combo #{i+1}</span>
+                  <span className="nutrition-value">cost: {c.cost ?? 0}</span>
+                  <button
+                    className="more-btn"
+                    style={{ width: 120, marginTop: 0 }}
+                    onClick={() => onChooseIndex(tm._id, i)}
+                  >
+                    Choose
+                  </button>
+                </div>
+              ))}
+              {!tm.mealCombos?.length && <div>No alternative combos available.</div>}
+            </div>
+
+            <div className="section-tag nutrition-tag">Add from My Meals</div>
+            <div className="nutrition-container" style={{ marginBottom: 16, maxHeight: 180, overflow: "auto" }}>
+              {userMeals.map((m) => (
+                <div key={m._id} className="nutrition-item" style={{ alignItems: "center" }}>
+                  <span className="nutrition-name">{m.name}</span>
+                  <button className="more-btn" style={{ width: 120, marginTop: 0 }}
+                    onClick={() => onAddMeal(tm, m._id)}
+                  >
+                    Add 0.25x
+                  </button>
+                </div>
+              ))}
+              {!userMeals.length && <div>No saved meals.</div>}
+            </div>
+
+            <div className="section-tag nutrition-tag">Add from System</div>
+            <form onSubmit={searchSys} className="nutrition-container" style={{ marginBottom: 8 }}>
+              <input
+                value={sysQuery}
+                onChange={(e) => setSysQuery(e.target.value)}
+                placeholder="Search system meals…"
+                className="meal-input"
+                style={{ width: "100%", marginBottom: 8, padding: 8, border: "1px solid #ddd", borderRadius: 8 }}
+              />
+              <button className="more-btn" type="submit">Search</button>
+            </form>
+            <div className="nutrition-container" style={{ maxHeight: 180, overflow: "auto" }}>
+              {sysMeals.map((m) => (
+                <div key={m._id} className="nutrition-item" style={{ alignItems: "center" }}>
+                  <span className="nutrition-name">{m.name}</span>
+                  <button className="more-btn" style={{ width: 120, marginTop: 0 }}
+                    onClick={() => onAddMeal(tm, m._id)}
+                  >
+                    Add 0.25x
+                  </button>
+                </div>
+              ))}
+            </div>
+
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

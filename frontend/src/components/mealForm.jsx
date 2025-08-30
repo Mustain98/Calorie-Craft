@@ -306,7 +306,7 @@ export default function MealForm({
                     className="w-20 border border-gray-300 rounded px-2 py-1"
                   />
                   <span className="text-gray-600 select-none">
-                    {item.measuringUnit.toLowerCase() === "pc"
+                    {item.measuringUnit.toLowerCase() === "pcs"
                       ? `x ${item.totalunitweight} gm per ${item.measuringUnit}`
                       : `x ${item.totalunitweight} ${item.measuringUnit}`}
                   </span>

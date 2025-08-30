@@ -8,7 +8,6 @@ const {cloudinary}=require('../utils/cloudinary');
 const createMeal = async (req, res) => {
   try {
     const mealData = await prepareMealData({ ...req.body, file: req.file });
-    console.log(mealData);
     const newMeal = new Meal(mealData);
     await newMeal.save();
     res.status(201).json(newMeal);
@@ -99,10 +98,70 @@ const getMealById = async (req, res) => {
   }
 };
 
+// search meal 
+const searchMeal =async(req,res)=>{ 
+    try {
+      const query = req.query.q;
+      if(!query || query.trim() === '')
+         { return res.status(400).json({ error: 'Missing search query' });
+      } 
+    const regex = new RegExp(query.trim(), 'i');
+    const items = await Meal.find({ name: regex }).limit(10).sort({ name: 1 });
+    res.status(200).json(items);
+    }
+    catch (err) { res.status(500).json({ error: 'Search failed' });
+   } 
+  }
+//get meal category wise
+const allowedMealCategories =
+  (Meal.schema.path('categories').caster && Meal.schema.path('categories').caster.enumValues) || [
+    'breakfast', 'lunch', 'dinner', 'snack', 'main dish', 'side dish', 'dessert', 'drink'
+  ];
+
+const getMealsByCategories = async (req, res) => {
+  try {
+    // categories may come as ?categories=breakfast,lunch
+    const raw = (req.query.categories || '').trim();
+    if (!raw) {
+      return res.status(400).json({ error: 'Query parameter "categories" is required.' });
+    }
+
+    const requested = raw
+      .split(',')
+      .map(s => s.trim().toLowerCase())
+      .filter(Boolean);
+
+    // map to canonical enum values
+    const valid = requested
+      .map(r => allowedMealCategories.find(c => c.toLowerCase() === r))
+      .filter(Boolean);
+
+    if (!valid.length) {
+      return res.status(400).json({
+        error: `No valid categories provided.`,
+        allowed: allowedMealCategories
+      });
+    }
+
+    // find meals that contain ANY of the categories
+    const meals = await Meal.find({ categories: { $in: valid } })
+      .populate('foodItems.food');
+
+    return res.status(200).json({
+      meals
+    });
+  } catch (err) {
+    console.error('[getMealsByCategories] error:', err);
+    return res.status(500).json({ error: 'Failed to fetch meals by categories' });
+  }
+};
+
 module.exports = {
   createMeal,
   updateMeal,
   deleteMeal,
   getAllMeals,
-  getMealById
+  getMealById,
+  searchMeal,
+  getMealsByCategories
 };

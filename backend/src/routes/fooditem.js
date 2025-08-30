@@ -1,21 +1,20 @@
 const express = require('express');
 const {
   getAllFoodItems,
-  getFoodItemByName,
-  getFoodItemByCategory,
   deleteFoodItem,
   createFoodItem,
-  searchFoodItems
+  searchFoodItems,
+  getFoodItemByCategory
 } = require('../controllers/foodItemController');
 
 const router = express.Router();
 
 // Route setup
-router.get('/search', searchFoodItems);               // /fooditems/search?q=apple
-router.get('/', getAllFoodItems);                     // /fooditems/
-router.get('/category/:category', getFoodItemByCategory); // /fooditems/category/Fruit
-router.get('/name/:name', getFoodItemByName);         // /fooditems/name/Apple
-router.delete('/:id', deleteFoodItem);                // /fooditems/123
-router.post('/', createFoodItem);                     // /fooditems/
+router.get('/search', searchFoodItems);
+router.get('/', getAllFoodItems);
+// router.get('/:name', getFoodItemByName);
+router.delete('/:id', deleteFoodItem);
+router.post('/', createFoodItem);
+router.get('/by_category/:category',getFoodItemByCategory);
 
 module.exports = router;

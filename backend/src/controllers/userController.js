@@ -56,6 +56,17 @@ const loginUser = async (req, res) => {
 const getCurrentUser = async (req, res) => {
   const user = await User.findById(req.user.id).populate('weekPlan').select('-password');
   if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const needsHeal = !user.nutritionalRequirement ||
+    ['calories','protein','carbs','fats'].some(
+      k => typeof user.nutritionalRequirement[k] !== 'number' || isNaN(user.nutritionalRequirement[k])
+    );
+
+  if (needsHeal) {
+    user.nutritionalRequirement = User.calculateNutrition(user);
+    user.manualNutrition = false;
+    await user.save();
+  }
   res.json(user);
 };
 
