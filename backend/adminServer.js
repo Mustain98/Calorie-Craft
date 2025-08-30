@@ -10,9 +10,14 @@ const foodItemRoute = require('./src/routes/fooditem');
 const app = express();
 const PORT = process.env.ADMIN_PORT;
 
-app.use(cors({ origin: 'http://localhost:3002' }));
+app.use(cors({ 
+  origin: ['http://localhost:3002',
+    'https://calorie-craft-admin-frontend.onrender.com',
+  ]
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use((req, res, next) => {
   console.log(`[ADMIN SERVER] ${req.method} ${req.originalUrl}`);
   next();
@@ -21,6 +26,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/meal',mealRoute);
 app.use('/api/fooditem', foodItemRoute);
 
+app.use(express.urlencoded({ extended: true }));
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {

@@ -42,7 +42,7 @@ export default function SignupPage() {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/users/register",
+         `${process.env.REACT_APP_API_BASE_URL}/api/users/register`,
         {
           name: formData.name,
           email: formData.email,
@@ -60,14 +60,16 @@ export default function SignupPage() {
       setSuccess("User registered successfully! Redirecting to login...");
       toast.success("Registration Successful");
       setTimeout(() => {
-        navigate("/login");
+        navigate("/signin");
       }, 1500);
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed.");
       toast.error("Registration failed.");
     }
   };
-
+  const handleNavigateToSignin=async()=>{
+    navigate('/signin');
+  }
   return (
     <div className="signup-page">
       <LeftSection />
@@ -177,6 +179,12 @@ export default function SignupPage() {
           {success && <p className="success-text">{success}</p>}
 
           <button type="submit">Sign up</button>
+          <p className="signup-link">
+            Already have an account?{" "}
+            <span className="link-text" onClick={handleNavigateToSignin}>
+              Sign in here
+            </span>
+          </p>
         </form>
       </div>
     </div>

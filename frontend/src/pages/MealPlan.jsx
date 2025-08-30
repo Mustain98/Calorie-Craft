@@ -1,124 +1,125 @@
-import React, { useEffect, useMemo, useState } from "react";
+// src/pages/MealPlan.jsx
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "../components/sideBar";
+import RequirementSummary from "../components/mealplan/RequirementSummary";
+import DayTabs from "../components/mealplan/DayTabs";
+import TimedMealList from "../components/mealplan/TimedMealList";
+import AddMealModal from "../components/mealplan/AddMealModal";
+import CombosModal from "../components/mealplan/CombosModal";
+import MealModal from "../components/MealComponents/MealModal";
+import FullPageLoader from "../components/FullPageLoader";
+import { toast } from "react-toastify";
 
-const API_BASE = "http://localhost:4000/api";
-const Q_STEP = 0.25;
+const API_BASE = `${process.env.REACT_APP_API_BASE_URL}/api`;
+const HEADERS = () => ({
+  Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+});
 
 export default function MealPlan() {
   const navigate = useNavigate();
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [userData, setUserData] = useState(null);
+  const [overlayLoading, setOverlayLoading] = useState(false);
+  const [user, setUser] = useState(null);
   const [weekPlan, setWeekPlan] = useState(null);
   const [activeDayIndex, setActiveDayIndex] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [planMissing, setPlanMissing] = useState(false);
+  const [regenerateLoading, setRegenerateLoading] = useState({});
+  // overlays
+  const [selectedMealForPreview, setSelectedMealForPreview] = useState(null);
+  const [showCombosFor, setShowCombosFor] = useState(null);
+  const [showAddFor, setShowAddFor] = useState(null);
 
-  // modal state for a specific timed meal
-  const [openTimedMeal, setOpenTimedMeal] = useState(null); // the full timedMeal doc
+  const loadAll = useCallback(async () => {
+    try {
+      setLoading(true);
+      const me = await axios.get(`${API_BASE}/users/me`, {
+        headers: HEADERS(),
+      });
+      setUser(me.data || null);
 
-  const weekDays = useMemo(
-    () => ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
-    []
-  );
+      const wpRes = await axios.get(`${API_BASE}/weekPlans/me`, {
+        headers: HEADERS(),
+      });
+      const wp = wpRes.data?.weekPlan || null;
 
-  const headers = () => ({
-    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-  });
+      if (!wp || !Array.isArray(wp.days) || wp.days.length === 0) {
+        setPlanMissing(true);
+        setWeekPlan(null);
+      } else {
+        setWeekPlan(wp);
+        setPlanMissing(false);
+        setActiveDayIndex(0);
+      }
+    } catch (err) {
+      const code = err?.response?.status;
+      if (code === 401) {
+        localStorage.removeItem("token");
+        navigate("/signin");
+      } else {
+        console.error("[MealPlan] loadAll:", err?.response?.data || err);
+        toast.error("Failed to load meal plan.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
 
-  // Load user + my current week plan
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return navigate("/signin");
+    loadAll();
+  }, [navigate, loadAll]);
 
-    (async () => {
-      try {
-        const me = await axios.get(`${API_BASE}/users/me`, { headers: headers() });
-        setUserData(me.data);
-
-        const wp = await axios.get(`${API_BASE}/week-plan/me`, { headers: headers() });
-        setWeekPlan(wp.data?.weekPlan || wp.data); // support either {weekPlan} or raw
-      } catch (err) {
-        console.error("[MealPlan] fetch error:", err?.response?.data || err);
+  const generatePlan = async () => {
+    try {
+      setOverlayLoading(true);
+      await axios.post(`${API_BASE}/weekPlans`, {}, { headers: HEADERS() });
+      toast.success("Generated a new 7-day plan.");
+      await loadAll();
+    } catch (err) {
+      const code = err?.response?.status;
+      if (code === 401) {
         localStorage.removeItem("token");
         navigate("/signin");
+      } else {
+        toast.error(err?.response?.data?.error || "Failed to generate plan.");
       }
-    })();
-  }, [navigate]);
+    } finally {
+      setOverlayLoading(false);
+    }
+  };
+
+  const deletePlan = async () => {
+    try {
+      await axios.delete(`${API_BASE}/weekPlans/me`, { headers: HEADERS() });
+      toast.success("Deleted your week plan.");
+      await loadAll();
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Failed to delete plan.");
+    }
+  };
 
   const toggleSidebar = () => setSidebarVisible((v) => !v);
 
-  const dayObj = weekPlan?.days?.[activeDayIndex] || null;
-  const timedMeals = dayObj?.timedMeals || [];
+  const weekDays = useMemo(
+    () => [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ],
+    []
+  );
 
-  // Totals for the active day — we can sum chosen combo macros or use day totals if provided
-  const dayTotals = useMemo(() => {
-    if (!timedMeals.length) return { calories: 0, protein: 0, carbs: 0, fat: 0 };
-    return timedMeals.reduce(
-      (t, tm) => {
-        t.calories += Number(tm.totalCalories || 0);
-        t.protein  += Number(tm.totalProtein  || 0);
-        t.carbs    += Number(tm.totalCarbs    || 0);
-        t.fat      += Number(tm.totalFat      || 0);
-        return t;
-      },
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
-  }, [timedMeals]);
+  const dayDoc = weekPlan?.days?.[activeDayIndex] || null;
+  const timedMeals = Array.isArray(dayDoc?.timedMeals) ? dayDoc.timedMeals : [];
 
-  // --- Actions on a timed meal ---
-
-  // swap chosen combo to an index in mealCombos
-  const chooseComboIndex = async (tmId, index) => {
-    try {
-      const res = await axios.patch(
-        `${API_BASE}/timed-meals/${tmId}`,
-        { chooseIndex: index },
-        { headers: headers() }
-      );
-      // update local state
-      patchTimedMealInState(res.data);
-    } catch (err) {
-      console.error("[chooseComboIndex] failed:", err?.response?.data || err);
-      alert("Failed to choose combo");
-    }
-  };
-
-  // replace chosen combo with a custom combo object
-  const replaceChosenCombo = async (tmId, combo) => {
-    try {
-      const res = await axios.patch(
-        `${API_BASE}/timed-meals/${tmId}`,
-        { choosenCombo: combo },
-        { headers: headers() }
-      );
-      patchTimedMealInState(res.data);
-    } catch (err) {
-      console.error("[replaceChosenCombo] failed:", err?.response?.data || err);
-      alert("Failed to update chosen combo");
-    }
-  };
-
-  // add a meal to chosen combo (quantity default 0.25)
-  const addMealToChosen = async (tm, mealId) => {
-    const chosen = tm.choosenCombo || { meals: [], cost: 0 };
-    const next = {
-      ...chosen,
-      meals: [...(chosen.meals || []), { meal: mealId, quantity: Q_STEP }],
-    };
-    await replaceChosenCombo(tm._id, next);
-  };
-
-  // increment/decrement quantity of an item in chosen combo by 0.25
-  const adjQty = async (tm, itemIndex, delta) => {
-    const chosen = tm.choosenCombo || { meals: [], cost: 0 };
-    const items = [...(chosen.meals || [])];
-    const cur = Number(items[itemIndex]?.quantity || 0);
-    const nextQty = Math.max(Q_STEP, +(cur + delta).toFixed(2));
-    items[itemIndex] = { ...items[itemIndex], quantity: nextQty };
-    await replaceChosenCombo(tm._id, { ...chosen, meals: items });
-  };
-
-  // state helper: replace a timedMeal within weekPlan after server returns updated doc
   const patchTimedMealInState = (updatedTm) => {
     setWeekPlan((prev) => {
       if (!prev?.days) return prev;
@@ -130,229 +131,226 @@ export default function MealPlan() {
       }));
       return { ...prev, days: nextDays };
     });
-    // also refresh the open modal if it's the same TM
-    setOpenTimedMeal((cur) =>
+    setShowCombosFor((cur) =>
       cur && String(cur._id) === String(updatedTm._id) ? updatedTm : cur
+    );
+    setShowAddFor((cur) =>
+      cur &&
+      cur.timedMeal &&
+      String(cur.timedMeal._id) === String(updatedTm._id)
+        ? { ...cur, timedMeal: updatedTm }
+        : cur
     );
   };
 
-  // picker: get meals from user collection or system
-  const fetchUserMeals = async () => {
-    const res = await axios.get(`${API_BASE}/users/me/myMeals`, { headers: headers() });
-    return res.data || [];
+  const chooseComboIndex = async (tmId, index) => {
+    try {
+      const res = await axios.put(
+        `${API_BASE}/timed-meals/${tmId}/replace-chosen`,
+        { otherComboIndex: index },
+        { headers: HEADERS() }
+      );
+      patchTimedMealInState(res.data?.timedMeal || res.data);
+      toast.success("Combo selected.");
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Failed to choose combo.");
+    }
   };
-  const searchSystemMeals = async (q) => {
-    const res = await axios.get(`${API_BASE}/meal/search`, {
-      params: { q },
-    });
-    return res.data || [];
+
+  const handleRegenerateTimedMeal = async (tmId) => {
+    setRegenerateLoading((prev) => ({ ...prev, [tmId]: true }));
+    try {
+      const res = await axios.post(
+        `${API_BASE}/weekPlans/timed-meal/${tmId}/regenerate`,
+        {},
+        { headers: HEADERS() }
+      );
+      patchTimedMealInState(res.data.timedMeal || res.data);
+      toast.success("Timed meal regenerated.");
+    } catch (e) {
+      console.error("Regenerate failed:", e?.response?.data || e);
+      toast.error("Failed to regenerate timed meal");
+    } finally {
+      setRegenerateLoading((prev) => ({ ...prev, [tmId]: false }));
+    }
+  };
+
+  const removeItemFromChosen = async (tm, index) => {
+    try {
+      const res = await axios.patch(
+        `${API_BASE}/timed-meals/${tm._id}/remove-chosen-meal`,
+        { itemIndex: index },
+        { headers: HEADERS() }
+      );
+      patchTimedMealInState(res.data?.timedMeal || res.data);
+      toast.success("Meal removed from slot.");
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Failed to remove meal.");
+    }
+  };
+
+  const addUserMeal = async (tmId, userMealId, quantity) => {
+    try {
+      const res = await axios.patch(
+        `${API_BASE}/timed-meals/${tmId}/add-user-meal`,
+        { userMealId, quantity },
+        { headers: HEADERS() }
+      );
+      patchTimedMealInState(res.data?.timedMeal || res.data);
+      toast.success("Meal added to slot.");
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Failed to add meal.");
+    }
+  };
+
+  // Ensure modal shows fully populated system meal if needed
+  const openMealPreview = async (mealDoc) => {
+    try {
+      // if looks populated (has foodItems with embedded food), show directly
+      if (Array.isArray(mealDoc?.foodItems) && mealDoc.foodItems.length > 0) {
+        if (
+          mealDoc.foodItems[0]?.food?.name ||
+          typeof mealDoc.foodItems[0]?.food === "object"
+        ) {
+          setSelectedMealForPreview(mealDoc);
+          return;
+        }
+      }
+      // otherwise, fetch system meal by id if present
+      if (mealDoc?._id) {
+        const { data } = await axios.get(`${API_BASE}/meals/${mealDoc._id}`);
+        setSelectedMealForPreview(data || mealDoc);
+        return;
+      }
+      // fallback: show whatever we have (may be user snapshot with macros only)
+      setSelectedMealForPreview(mealDoc);
+    } catch {
+      setSelectedMealForPreview(mealDoc);
+    }
   };
 
   return (
-    <div className="meal-plan-page">
-      <button className="toggle-btn" onClick={toggleSidebar}>⋮</button>
-      {userData && <Sidebar visible={sidebarVisible} userData={userData} />}
+    <div className="min-h-screen bg-gray-50">
+      {/* Floating toggle */}
+      <button
+        className="fixed top-5 left-5 z-[4000] flex h-10 w-10 items-center justify-center rounded-full bg-lime-500 text-white shadow-md hover:bg-lime-600"
+        onClick={toggleSidebar}
+        aria-label="Toggle sidebar"
+      >
+        ⋮
+      </button>
 
-      {/* Day tabs like your collection tabs */}
-      <div className={`view-toggle-bar ${!sidebarVisible ? "sidebar-hidden" : ""}`}>
-        {weekDays.map((d, i) => (
-          <button
-            key={d}
-            className={i === activeDayIndex ? "active" : ""}
-            onClick={() => setActiveDayIndex(i)}
-          >
-            {d}
-          </button>
-        ))}
+      {/* Sidebar */}
+      {user && <Sidebar visible={sidebarVisible} userData={user} />}
+
+      {/* Sticky day tabs + action bar */}
+      <div
+        className={`sticky top-0 z-40 border-b border-gray-200 bg-white/90 backdrop-blur px-4 sm:px-6 ${
+          sidebarVisible ? "ml-[19%]" : "ml-[5%]"
+        }`}
+      >
+        <div className="flex items-center justify-between py-3">
+          <DayTabs
+            days={weekDays}
+            activeIndex={activeDayIndex}
+            onSelect={setActiveDayIndex}
+          />
+          <div className="flex gap-2">
+            <button
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              onClick={deletePlan}
+            >
+              Delete plan
+            </button>
+            <button
+              className="rounded-lg bg-lime-500 px-3 py-2 text-sm font-medium text-white shadow hover:bg-lime-600"
+              onClick={generatePlan}
+            >
+              Generate plan
+            </button>
+          </div>
+        </div>
       </div>
 
-      <main className={`meal-plan-content ${!sidebarVisible ? "sidebar-hidden" : ""}`}>
-        {!weekPlan ? (
-          <div>Loading week plan…</div>
+      {/* Content */}
+      <main
+        className={`transition-all duration-300 ${
+          sidebarVisible ? "ml-[270px]" : "ml-0"
+        } px-4 sm:px-6 pb-12`}
+      >
+        {loading ? (
+          <FullPageLoader visible={loading} />
+        ) : planMissing ? (
+          <div className="mx-auto mt-10 max-w-2xl rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+            <h3 className="text-lg font-semibold">No meal plan yet</h3>
+            <p className="mt-1 text-sm text-gray-600">
+              You don’t have an active 7-day plan. Generate one now, or come
+              back after creating your meal plan settings.
+            </p>
+            <div className="mt-5 flex justify-center gap-3">
+              <button
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                onClick={() => navigate("/mealsetting")}
+              >
+                Meal Plan Settings
+              </button>
+              <button
+                className="rounded-lg bg-lime-500 px-4 py-2 text-sm font-medium text-white shadow hover:bg-lime-600"
+                onClick={generatePlan}
+              >
+                Generate a Week Plan
+              </button>
+            </div>
+          </div>
         ) : (
           <>
-            {/* Daily totals */}
-            <div className="nutrition-summary-row" style={{ marginBottom: 16 }}>
-              <div className="nutrition-col">
-                <strong>Calories</strong> {dayTotals.calories}
-              </div>
-              <div className="nutrition-col">
-                <strong>Protein</strong> {dayTotals.protein} g
-              </div>
-              <div className="nutrition-col">
-                <strong>Carbs</strong> {dayTotals.carbs} g
-              </div>
-              <div className="nutrition-col">
-                <strong>Fat</strong> {dayTotals.fat} g
-              </div>
-            </div>
-
-            {/* Timed meals for the day */}
-            <div className="meal-grid" style={{ gridTemplateColumns: "1fr", gap: 12 }}>
-              {timedMeals.map((tm) => (
-                <div key={tm._id} className="meal-card clickable" onClick={() => setOpenTimedMeal(tm)}>
-                  <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-                    <div>
-                      <small>{tm.type}</small>
-                      <p style={{ margin: 0, fontWeight: 600 }}>{tm.name}</p>
-                      <div style={{ fontSize: 12, color: "#666" }}>
-                        {Math.round(tm.totalCalories)} kcal • P {Math.round(tm.totalProtein)} • C {Math.round(tm.totalCarbs)} • F {Math.round(tm.totalFat)}
-                      </div>
-                    </div>
-                    <button className="options-btn" onClick={(e) => { e.stopPropagation(); setOpenTimedMeal(tm); }}>
-                      ⋮
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <RequirementSummary user={user} dayDoc={dayDoc} />
+            <TimedMealList
+              timedMeals={timedMeals}
+              onOpenMealPreview={openMealPreview}
+              onOpenCombos={setShowCombosFor}
+              onOpenReplace={(tm, replaceIndex = null) =>
+                setShowAddFor({ timedMeal: tm, replaceIndex })
+              }
+              onRegenerateTimedMeal={handleRegenerateTimedMeal}
+              onRemoveItem={removeItemFromChosen}
+              onOpenAddMeal={(tm) => setShowAddFor({ timedMeal: tm })}
+              regenerateLoading={regenerateLoading}   // <-- add this
+            />
           </>
         )}
       </main>
 
-      {/* Timed Meal modal */}
-      {openTimedMeal && (
-        <TimedMealModal
-          tm={openTimedMeal}
-          onClose={() => setOpenTimedMeal(null)}
-          onChooseIndex={chooseComboIndex}
-          onAddMeal={addMealToChosen}
-          onAdjustQty={adjQty}
-          fetchUserMeals={fetchUserMeals}
-          searchSystemMeals={searchSystemMeals}
+      {/* Read-only Meal Modal, forced on top */}
+      {selectedMealForPreview && (
+        <div className="fixed inset-0 z-[5000]">
+          <MealModal
+            selectedMeal={selectedMealForPreview}
+            closeNutritionModal={() => setSelectedMealForPreview(null)}
+            activeTab="view"
+          />
+        </div>
+      )}
+
+      {/* Combos modal (choose another combo) */}
+      {showCombosFor && (
+        <CombosModal
+          tm={showCombosFor}
+          onClose={() => setShowCombosFor(null)}
+          onChoose={(index) => chooseComboIndex(showCombosFor._id, index)}
+          onPreviewMeal={openMealPreview}
         />
       )}
-    </div>
-  );
-}
 
-/* -------- Modal component (inline for brevity) -------- */
-function TimedMealModal({
-  tm,
-  onClose,
-  onChooseIndex,
-  onAddMeal,
-  onAdjustQty,
-  fetchUserMeals,
-  searchSystemMeals,
-}) {
-  const [userMeals, setUserMeals] = useState([]);
-  const [sysQuery, setSysQuery] = useState("");
-  const [sysMeals, setSysMeals] = useState([]);
-
-  useEffect(() => {
-    (async () => {
-      try { setUserMeals(await fetchUserMeals()); } catch {}
-    })();
-  }, [fetchUserMeals]);
-
-  const searchSys = async (e) => {
-    e.preventDefault();
-    try { setSysMeals(await searchSystemMeals(sysQuery)); } catch {}
-  };
-
-  const chosen = tm?.choosenCombo || { meals: [] };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e)=>e.stopPropagation()}>
-        <div className="modal-header">
-          <button className="back-btn" onClick={onClose}>←</button>
-          <h3>{tm.name} — {tm.type}</h3>
-        </div>
-
-        <div className="modal-body">
-          {/* Left: chosen combo + edit */}
-          <div className="modal-left">
-            <div className="section-tag meals-tag">Chosen combo</div>
-            <div className="meals-container">
-              {(chosen.meals || []).map((it, idx) => (
-                <div key={idx} className="meal-detail-card" style={{ marginBottom: 8 }}>
-                  <div className="meal-detail-content">
-                    <img
-                      src={it.meal?.imageUrl || it.meal?.image}
-                      alt={it.meal?.name}
-                      className="meal-detail-image"
-                    />
-                    <div className="meal-detail-info">
-                      <div className="meal-name">{it.meal?.name || "Meal"}</div>
-                      <div className="meal-weight">
-                        Qty: {Number(it.quantity || 0).toFixed(2)}x
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button className="options-btn" onClick={() => onAdjustQty(tm, idx, -Q_STEP)}>-</button>
-                      <button className="options-btn" onClick={() => onAdjustQty(tm, idx, +Q_STEP)}>+</button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {!chosen.meals?.length && <div>No items in chosen combo.</div>}
-            </div>
-          </div>
-
-          {/* Right: other combos + add from collections */}
-          <div className="modal-right">
-            <div className="section-tag nutrition-tag">Other combos</div>
-            <div className="nutrition-container" style={{ marginBottom: 16 }}>
-              {(tm.mealCombos || []).map((c, i) => (
-                <div key={i} className="nutrition-item" style={{ alignItems: "center" }}>
-                  <span className="nutrition-name">Combo #{i+1}</span>
-                  <span className="nutrition-value">cost: {c.cost ?? 0}</span>
-                  <button
-                    className="more-btn"
-                    style={{ width: 120, marginTop: 0 }}
-                    onClick={() => onChooseIndex(tm._id, i)}
-                  >
-                    Choose
-                  </button>
-                </div>
-              ))}
-              {!tm.mealCombos?.length && <div>No alternative combos available.</div>}
-            </div>
-
-            <div className="section-tag nutrition-tag">Add from My Meals</div>
-            <div className="nutrition-container" style={{ marginBottom: 16, maxHeight: 180, overflow: "auto" }}>
-              {userMeals.map((m) => (
-                <div key={m._id} className="nutrition-item" style={{ alignItems: "center" }}>
-                  <span className="nutrition-name">{m.name}</span>
-                  <button className="more-btn" style={{ width: 120, marginTop: 0 }}
-                    onClick={() => onAddMeal(tm, m._id)}
-                  >
-                    Add 0.25x
-                  </button>
-                </div>
-              ))}
-              {!userMeals.length && <div>No saved meals.</div>}
-            </div>
-
-            <div className="section-tag nutrition-tag">Add from System</div>
-            <form onSubmit={searchSys} className="nutrition-container" style={{ marginBottom: 8 }}>
-              <input
-                value={sysQuery}
-                onChange={(e) => setSysQuery(e.target.value)}
-                placeholder="Search system meals…"
-                className="meal-input"
-                style={{ width: "100%", marginBottom: 8, padding: 8, border: "1px solid #ddd", borderRadius: 8 }}
-              />
-              <button className="more-btn" type="submit">Search</button>
-            </form>
-            <div className="nutrition-container" style={{ maxHeight: 180, overflow: "auto" }}>
-              {sysMeals.map((m) => (
-                <div key={m._id} className="nutrition-item" style={{ alignItems: "center" }}>
-                  <span className="nutrition-name">{m.name}</span>
-                  <button className="more-btn" style={{ width: 120, marginTop: 0 }}
-                    onClick={() => onAddMeal(tm, m._id)}
-                  >
-                    Add 0.25x
-                  </button>
-                </div>
-              ))}
-            </div>
-
-          </div>
-        </div>
-      </div>
+      {/* add from user's collection modal */}
+      {showAddFor && (
+        <AddMealModal
+          tm={showAddFor.timedMeal}
+          onClose={() => setShowAddFor(null)}
+          onAdd={addUserMeal}
+        />
+      )}
+      <FullPageLoader visible={overlayLoading} />
     </div>
   );
 }

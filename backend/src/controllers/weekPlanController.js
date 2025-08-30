@@ -11,15 +11,17 @@ const {
 // POST /api/weekPlans
 exports.generateForCurrentUser = async (req, res) => {
   try {
-    // if user already has a weekPlan, delete it (and children) first
-    const user = await User.findById(req.user.id).select('weekPlan');
-    if (user?.weekPlan) {
-      await deleteWeekPlanByIdInternal(user.weekPlan);
-      user.weekPlan = undefined;
-      await user.save();
+    const uid = req.user.id;
+
+    // If user already has a weekPlan, delete it (and children) first
+    const snapBefore = await User.findById(uid).select('weekPlan').lean();
+    if (snapBefore?.weekPlan) {
+      await deleteWeekPlanByIdInternal(snapBefore.weekPlan);
+      await User.updateOne({ _id: uid }, { $unset: { weekPlan: 1 } });
     }
 
-    const wp = await createWeekPlan(req.user.id); // attaches weekPlan to user AFTER creation
+    // createWeekPlan MUST attach a user to every TimedMeal it creates
+    const wp = await createWeekPlan(uid);
     return res.status(201).json({ message: 'Generated', weekPlan: wp });
   } catch (err) {
     console.error('[generateForCurrentUser]', err);
@@ -33,13 +35,30 @@ exports.getMyCurrentWeekPlan = async (req, res) => {
     const user = await User.findById(req.user.id).select('weekPlan');
     if (!user?.weekPlan) return res.json({ weekPlan: null });
 
+    // Populate system + user meals, and their foodItems->food
     const wp = await WeekPlan.findById(user.weekPlan).populate({
       path: 'days',
       populate: {
         path: 'timedMeals',
         populate: [
-          { path: 'mealCombos.meals.meal' },
-          { path: 'choosenCombo.meals.meal' },
+          // system meals (plus nested food items)
+          {
+            path: 'mealCombos.meals.meal',
+            populate: { path: 'foodItems.food' },
+          },
+          {
+            path: 'choosenCombo.meals.meal',
+            populate: { path: 'foodItems.food' },
+          },
+          // user meals (plus nested food items)
+          {
+            path: 'mealCombos.meals.userMeal',
+            populate: { path: 'foodItems.food' },
+          },
+          {
+            path: 'choosenCombo.meals.userMeal',
+            populate: { path: 'foodItems.food' },
+          },
         ],
       },
     });
@@ -55,12 +74,13 @@ exports.getMyCurrentWeekPlan = async (req, res) => {
 // DELETE /api/weekPlans/me
 exports.deleteMyCurrentWeekPlan = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('weekPlan');
-    if (!user?.weekPlan) return res.json({ message: 'No plan to delete' });
+    const uid = req.user.id;
+    const snapBefore = await User.findById(uid).select('weekPlan').lean();
 
-    await deleteWeekPlanByIdInternal(user.weekPlan);
-    user.weekPlan = undefined;
-    await user.save();
+    if (!snapBefore?.weekPlan) return res.json({ message: 'No plan to delete' });
+
+    await deleteWeekPlanByIdInternal(snapBefore.weekPlan);
+    await User.updateOne({ _id: uid }, { $unset: { weekPlan: 1 } });
 
     return res.json({ message: 'Deleted' });
   } catch (err) {
@@ -72,7 +92,10 @@ exports.deleteMyCurrentWeekPlan = async (req, res) => {
 // POST /api/weekPlans/timed-meal/:tmId/regenerate
 exports.regenerateTimedMeal = async (req, res) => {
   try {
-    const tm = await regenerateTimedMealById(req.user.id, req.params.tmId, req.body || {});
+    // Ensure the service receives the user id so it sets TimedMeal.user
+    const payload = { ...req.body, user: req.user.id };
+    const tm = await regenerateTimedMealById(req.user.id, req.params.tmId, payload);
+
     return res.status(200).json({ message: 'Regenerated', timedMeal: tm });
   } catch (err) {
     console.error('[regenerateTimedMeal]', err);

@@ -31,7 +31,7 @@ export default function SigninPage() {
 
     try {
       const res = await axios.post(
-        "http://localhost:4000/api/users/login",
+        `${process.env.REACT_APP_API_BASE_URL}/api/users/login`,
         formData
       );
 
@@ -47,6 +47,9 @@ export default function SigninPage() {
     }
   };
 
+  const handleNavigateToSignup=async()=>{
+    navigate('/signup');
+  }
   return (
     <div className="signin-page">
       <LeftSection />
@@ -77,6 +80,12 @@ export default function SigninPage() {
 
           {error && <p className="error-text">{error}</p>}
           <button type="submit">Sign in</button>
+          <p className="signup-link">
+            Don't have an account?{" "}
+            <span className="link-text" onClick={handleNavigateToSignup}>
+              Sign up here
+            </span>
+          </p>
         </form>
       </div>
     </div>

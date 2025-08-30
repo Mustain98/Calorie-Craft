@@ -1,7 +1,7 @@
 // backend/src/routes/weekPlan.js
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware.js');
 const c = require('../controllers/weekPlanController');
 
 // Generate a fresh week plan (deletes previous if any)

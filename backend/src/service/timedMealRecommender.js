@@ -1,108 +1,61 @@
 // src/service/timedMealRecommender.js
-const mongoose = require('mongoose');
+// Recommender that mirrors your sample algorithm exactly, with .env-driven tunables.
+
 const Meal = require('../models/meal');
 const UserMealPreference = require('../models/userMealPreference');
 
-// STEP from env or default 0.25 (and safely parsed)
-const STEP = (() => {
-  const raw = process.env.UNIT_PORTION_FACTOR || process.env.unitPortionFactor;
-  const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? n : 0.25;
-})();
+const {
+  STEP,
+  planCost,
+  comboTotals,
+  allowedQtyChoicesForMealWithMax,
+  withinTolerance,
+} = require('./nutritionCost');
 
-/* ---------------- cost & utils ---------------- */
+// env helpers
+const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
-function planCost(tot, demand) {
-  const dCal = (tot.calories || 0) - (demand.calories || 0);
-  const dPro = (tot.protein  || 0) - (demand.protein  || 0);
-  const dFat = (tot.fat      || 0) - (demand.fats     || 0);
-  const dCar = (tot.carb     || 0) - (demand.carbs    || 0);
-
-  const wCal = 1, wPro = 8, wFat = 6, wCar = 6;
-  const under = (x) => (x < 0 ? -x : 0);
-  const over  = (x) => (x > 0 ?  x : 0);
-
-  return (
-    wCal * (under(dCal) + 0.5 * over(dCal)) +
-    wPro * (under(dPro) + 0.5 * over(dPro)) +
-    wFat * (under(dFat) + 0.5 * over(dFat)) +
-    wCar * (under(dCar) + 0.5 * over(dCar))
-  );
-}
-
-function totalsOf(items) {
-  return items.reduce((t, it) => {
-    const m = it.mealDoc || {};
-    const q = Number(it.quantity || 1);
-    t.grams    += (Number(m.portionSize)   || 0) * q;
-    t.calories += (Number(m.totalCalories) || 0) * q;
-    t.protein  += (Number(m.totalProtein)  || 0) * q;
-    t.fat      += (Number(m.totalFat)      || 0) * q;
-    t.carb     += (Number(m.totalCarbs)    || 0) * q;
-    return t;
-  }, { grams: 0, calories: 0, protein: 0, fat: 0, carb: 0 });
-}
+const ENV = {
+  ITERATIONS:         Math.max(100, Math.floor(num(process.env.REC_ITERATIONS,        1000))),
+  TOLERANCE_PCT:      clamp01(num(process.env.REC_TOLERANCE_PCT,                       0.10)),
+  GLOBAL_MAX_FACTOR:  Math.max(1, num(process.env.REC_GLOBAL_MAX_FACTOR,               6)),
+  SIDE_CHANCE:        clamp01(num(process.env.REC_SIDE_CHANCE,                         0.60)),
+  DRINK_CHANCE:       clamp01(num(process.env.REC_DRINK_CHANCE,                        0.50)),
+  MAX_PORTION_SIZE:   Math.max(0, num(process.env.REC_MAX_PORTION_SIZE,                0)), // 0 => no cap
+};
 
 function pick(arr) {
   if (!Array.isArray(arr) || arr.length === 0) return null;
   return arr[(Math.random() * arr.length) | 0];
 }
-
+function shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 function dedupeKey(items) {
-  // key = sorted list of mealId@qty
   return items
     .map(it => `${String(it.meal)}@${Number(it.quantity || 1).toFixed(2)}`)
     .sort()
     .join('|');
 }
-
-/* ---------------- adaptive quantity helpers ---------------- */
-
-// factor needed so THIS meal alone could meet demand for each macro/calories,
-// take the maximum (tightest constraint); clamp with cap.
-function maxFactorToMeetDemand(meal, demand, cap = 8) {
-  const ratios = [];
-  if ((meal.totalCalories || 0) > 0 && (demand.calories || 0) > 0)
-    ratios.push(demand.calories / meal.totalCalories);
-  if ((meal.totalProtein || 0) > 0 && (demand.protein || 0) > 0)
-    ratios.push(demand.protein / meal.totalProtein);
-  if ((meal.totalFat || 0) > 0 && (demand.fats || 0) > 0)
-    ratios.push(demand.fats / meal.totalFat);
-  if ((meal.totalCarbs || 0) > 0 && (demand.carbs || 0) > 0)
-    ratios.push(demand.carbs / meal.totalCarbs);
-
-  if (!ratios.length) return 1; // nothing constrains – safe default
-  const fMax = Math.max(...ratios);
-  if (!isFinite(fMax) || fMax <= 0) return 1;
-  return Math.min(cap, fMax);
+function filterByType(meals, type) {
+  return meals.filter(m => Array.isArray(m.categories) && m.categories.includes(type));
 }
-
-// build discrete choices: STEP … fMax in STEP increments
-function allowedQtyChoicesForMeal(meal, demand, step = STEP, cap = 8) {
-  const fMax = Math.max(step, maxFactorToMeetDemand(meal, demand, cap));
-  const out = [];
-  for (let f = step; f <= fMax + 1e-9; f += step) out.push(Number(f.toFixed(2)));
-  return out;
-}
-
-/* ---------------- generator ---------------- */
 
 /**
  * generateTimedMeal
- * Build N candidate combos for a given timed-meal slot (type + macro demand).
+ *  - userId: bias towards preferred meals (optional)
+ *  - type:   timed meal slot (e.g., 'breakfast')
+ *  - demand: { calories, protein, carbs, fats } for THIS slot
+ *  - preferPct: probability to choose from preferred pool first
+ *  - nCombos: how many results to return
+ *  - attempts: attempts per subset (inner loop)
  *
- * @param {Object} params
- *  - userId: ObjectId|string (optional, enables preference mixing)
- *  - type: 'breakfast'|'lunch'|'dinner'|'snack'|'brunch'|'supper'
- *  - demand: { calories, protein, fats, carbs }
- *  - preferPct: fraction [0..1] – probability a slot is chosen from user's preferences
- *  - nCombos: max number of combos to return
- *  - attempts: random attempts to generate combos
- *  - includeChances: { side: number, drink: number } in [0..1]
- *  - step: quantity step (default from env or 0.25)
- *  - maxFactorCap: hard cap for quantity factor (default 8x)
- *
- * @returns {Promise<Array<{ meals: [{meal, quantity}], cost }>>} sorted by cost asc
+ * Returns: [{ meals:[{meal, quantity}], cost:Number, feasible:Boolean, total:{...} }]
  */
 async function generateTimedMeal({
   userId = null,
@@ -110,14 +63,18 @@ async function generateTimedMeal({
   demand,
   preferPct = 0.4,
   nCombos = 20,
-  attempts = 400,
-  includeChances = { side: 0.6, drink: 0.5 },
+  attempts = 60,
   step = STEP,
-  maxFactorCap = 8,
+  // optional advanced (via env by default):
+  iterations = ENV.ITERATIONS,
+  tolerancePercent = ENV.TOLERANCE_PCT,
+  globalMaxFactor = ENV.GLOBAL_MAX_FACTOR,
+  includeChances = { side: ENV.SIDE_CHANCE, drink: ENV.DRINK_CHANCE },
+  maxPortionSize = ENV.MAX_PORTION_SIZE, // grams cap; 0 disables
 } = {}) {
   if (!type || !demand) return [];
 
-  // 1) Load meals for this type (categories contains the timed type)
+  // 1) Load meals for this type
   const base = await Meal.find({ categories: type })
     .select('_id name portionSize totalCalories totalProtein totalCarbs totalFat categories')
     .lean();
@@ -127,82 +84,141 @@ async function generateTimedMeal({
   const sides  = base.filter(m => (m.categories || []).includes('side dish'));
   const drinks = base.filter(m => (m.categories || []).includes('drink'));
 
+  const pool = filterByType(base, type);
+  const maxSubsetSize = Math.min(6, Math.max(1, Math.floor(pool.length / 2)));
+
   const safeMains  = mains.length  ? mains  : base;
   const safeSides  = sides.length  ? sides  : [];
   const safeDrinks = drinks.length ? drinks : [];
 
-  // 2) Load user preferences (to bias pools)
+  // 2) Load user preferences (optional)
   let prefIds = new Set();
   if (userId) {
     const prefDoc = await UserMealPreference.findOne({ user: userId }, { meals: 1 }).lean();
-    if (prefDoc?.meals?.length) {
-      prefIds = new Set(prefDoc.meals.map(id => String(id)));
-    }
+    if (prefDoc?.meals?.length) prefIds = new Set(prefDoc.meals.map(id => String(id)));
   }
   const isPref = (m) => prefIds.has(String(m._id));
-  const splitPool = (arr) => ({ pref: arr.filter(isPref), sys: arr.filter(m => !isPref(m)) });
-  const P = splitPool(safeMains);
-  const S = splitPool(safeSides);
-  const D = splitPool(safeDrinks);
+  const split = (arr) => ({ pref: arr.filter(isPref), sys: arr.filter(m => !isPref(m)) });
+  const P = split(safeMains);
+  const S = split(safeSides);
+  const D = split(safeDrinks);
 
-  // 3) Randomly generate combos
+  // 3) Random search with subset attempts (sample logic)
   const seen = new Set();
-  const combos = [];
+  const candidatesMap = new Map();
+  const tol = Number(tolerancePercent) || 0;
 
-  for (let i = 0; i < attempts && combos.length < nCombos; i++) {
-    // Always choose ONE main
-    const mainPool = Math.random() < preferPct && P.pref.length ? P.pref : (P.sys.length ? P.sys : P.pref);
-    const main = pick(mainPool);
-    if (!main) continue;
+  const cfgForFactors = { maxPortionSize: maxPortionSize > 0 ? maxPortionSize : Number.MAX_SAFE_INTEGER };
 
-    const items = [];
+  for (let it = 0; it < iterations; it++) {
+    // subset size distribution skewed to smaller sets
+    const s = Math.max(1, Math.round(Math.pow(Math.random(), 1.3) * (maxSubsetSize - 1))) + 1;
+    const subsetShuffled = shuffleInPlace([...pool]);
+    const subset = subsetShuffled.slice(0, Math.min(s, subsetShuffled.length));
 
-    // MAIN with adaptive quantity
-    {
-      const qChoices = allowedQtyChoicesForMeal(main, demand, step, maxFactorCap);
-      const qty = pick(qChoices) || step;
-      items.push({ meal: main._id, mealDoc: main, quantity: qty });
+    let bestForSubset = null;
+
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const items = [];
+
+      // MAIN (mandatory)
+      {
+        const mainPool = Math.random() < preferPct && P.pref.length ? P.pref : (P.sys.length ? P.sys : P.pref);
+        const main = pick(mainPool);
+        if (!main) continue;
+        const qChoices = allowedQtyChoicesForMealWithMax(main, cfgForFactors, step, globalMaxFactor);
+        const qty = pick(qChoices) || step;
+        items.push({ meal: main._id, mealDoc: main, quantity: qty });
+      }
+
+      // SIDE (optional)
+      if (safeSides.length && Math.random() < (includeChances.side ?? 0.6)) {
+        const sidePool = Math.random() < preferPct && S.pref.length ? S.pref : (S.sys.length ? S.sys : S.pref);
+        const side = pick(sidePool);
+        if (side && !items.some(it => String(it.meal) === String(side._id))) {
+          const qChoices = allowedQtyChoicesForMealWithMax(side, cfgForFactors, step, globalMaxFactor);
+          const qty = pick(qChoices) || step;
+          items.push({ meal: side._id, mealDoc: side, quantity: qty });
+        }
+      }
+
+      // DRINK (optional)
+      if (safeDrinks.length && Math.random() < (includeChances.drink ?? 0.5)) {
+        const drinkPool = Math.random() < preferPct && D.pref.length ? D.pref : (D.sys.length ? D.sys : D.pref);
+        const drink = pick(drinkPool);
+        if (drink && !items.some(it => String(it.meal) === String(drink._id))) {
+          const qChoices = allowedQtyChoicesForMealWithMax(drink, cfgForFactors, step, globalMaxFactor);
+          const qty = pick(qChoices) || step;
+          items.push({ meal: drink._id, mealDoc: drink, quantity: qty });
+        }
+      }
+
+      if (!items.length) continue;
+
+      const key = dedupeKey(items);
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const tot = comboTotals(items);
+      if (maxPortionSize > 0 && tot.grams > maxPortionSize) continue;
+
+      // Your cost & feasibility logic
+      const score = planCost(tot, demand);
+      const feasible = withinTolerance(tot, {
+        calorieDemand: demand.calories,
+        proteinDemand: demand.protein,
+        fatDemand:     demand.fats,
+        carbDemand:    demand.carbs,
+      }, tol);
+
+      const candidate = { items, tot, score, feasible };
+
+      if (!bestForSubset) {
+        bestForSubset = candidate;
+      } else {
+        if (feasible && !bestForSubset.feasible) {
+          bestForSubset = candidate;
+        } else if (feasible === bestForSubset.feasible && score < bestForSubset.score) {
+          bestForSubset = candidate;
+        }
+      }
+      if (feasible && score === 0) break;
     }
 
-    // optional SIDE with adaptive quantity
-    if (safeSides.length && Math.random() < (includeChances.side ?? 0.6)) {
-      const sidePool = Math.random() < preferPct && S.pref.length ? S.pref : (S.sys.length ? S.sys : S.pref);
-      const side = pick(sidePool);
-      if (side && String(side._id) !== String(main._id)) {
-        const qChoices = allowedQtyChoicesForMeal(side, demand, step, maxFactorCap);
-        const qty = pick(qChoices) || step;
-        items.push({ meal: side._id, mealDoc: side, quantity: qty });
+    if (bestForSubset && bestForSubset.items.length > 0) {
+      const k = dedupeKey(bestForSubset.items);
+      const existing = candidatesMap.get(k);
+      if (!existing || bestForSubset.score < existing.score) {
+        candidatesMap.set(k, bestForSubset);
       }
     }
 
-    // optional DRINK with adaptive quantity
-    if (safeDrinks.length && Math.random() < (includeChances.drink ?? 0.5)) {
-      const drinkPool = Math.random() < preferPct && D.pref.length ? D.pref : (D.sys.length ? D.sys : D.pref);
-      const drink = pick(drinkPool);
-      if (drink && !items.some(it => String(it.meal) === String(drink._id))) {
-        const qChoices = allowedQtyChoicesForMeal(drink, demand, step, maxFactorCap);
-        const qty = pick(qChoices) || step;
-        items.push({ meal: drink._id, mealDoc: drink, quantity: qty });
-      }
+    // early exit like your sample
+    if (candidatesMap.size >= nCombos * 3 && it > iterations * 0.2) {
+      if (candidatesMap.size >= nCombos * 2) break;
     }
-
-    if (!items.length) continue;
-
-    const key = dedupeKey(items);
-    if (seen.has(key)) continue;
-    seen.add(key);
-
-    const tot = totalsOf(items);
-    const cost = planCost(tot, demand);
-
-    combos.push({
-      meals: items.map(it => ({ meal: it.meal, quantity: it.quantity })),
-      cost: Number(cost.toFixed(4)),
-    });
   }
 
-  combos.sort((a, b) => a.cost - b.cost);
-  return combos.slice(0, nCombos);
+  // Rank: feasible first, then by cost asc
+  const all = Array.from(candidatesMap.values());
+  all.sort((a, b) => {
+    if (a.feasible && !b.feasible) return -1;
+    if (!a.feasible && b.feasible) return 1;
+    return a.score - b.score;
+  });
+
+  return all.slice(0, nCombos).map(c => ({
+    meals: c.items.map(it => ({ meal: it.meal, quantity: Number(it.quantity) })), // minimal payload
+    total: {
+      grams:     Number(c.tot.grams.toFixed(2)),
+      calories:  Number(c.tot.calories.toFixed(2)),
+      protein:   Number(c.tot.protein.toFixed(2)),
+      fat:       Number(c.tot.fat.toFixed(2)),
+      carbs:     Number(c.tot.carb.toFixed(2)),
+    },
+    cost: Number(c.score.toFixed(4)),
+    feasible: !!c.feasible,
+  }));
 }
 
 module.exports = { generateTimedMeal };

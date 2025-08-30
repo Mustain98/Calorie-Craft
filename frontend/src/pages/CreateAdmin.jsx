@@ -22,7 +22,7 @@ export default function CreateAdminPage() {
     const token = localStorage.getItem('token');
     if (!token) return navigate('/adminsignin');
 
-    axios.get('http://localhost:5001/api/admin/me', {
+    axios.get(`${process.env.REACT_APP_API_ADMIN_URL}/api/admin/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(res => setAdminData(res.data))
@@ -54,7 +54,7 @@ export default function CreateAdminPage() {
 
 try {
   const token = localStorage.getItem('token');
-    await axios.post('http://localhost:5001/api/admin/create', {
+    await axios.post(`${process.env.REACT_APP_API_ADMIN_URL}/api/admin/create`, {
     name: formData.name,
     email: formData.email,
     password: formData.password,
@@ -136,8 +136,8 @@ try {
                       required
                       >
                       <option value="">Select Access Level</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
+                      <option value="1">Moderator</option>
+                      <option value="2">Admin</option>
                       </select>
       
       

@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const calculateMealMacros = require('../utils/calculateMealMacros');
 
 function calculateNutrition({ gender, age, weight, height, activityLevel }) {
   const bmr = gender === 'male'
@@ -21,86 +20,19 @@ function calculateNutrition({ gender, age, weight, height, activityLevel }) {
   return { calories, protein, carbs, fats };
 }
 
-const EmbeddedMealSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  description: { type: String, default: '' },
-  imageUrl: { type: String, default: '', trim: true },
-  imageId: { type: String, default: null },
-  foodItems: [
-    {
-      food: { type: mongoose.Schema.Types.ObjectId, ref: 'fooditem', required: true },
-      quantity: { type: Number, default: 1, min: 0.1 }
-    }
-  ],
-  totalCalories: { type: Number, default: 0 },
-  totalProtein: { type: Number, default: 0 },
-  totalCarbs: { type: Number, default: 0 },
-  totalFat: { type: Number, default: 0 },
-  portionSize: { type: Number},
-  categories: [{
-    type: String,
-    enum: ['breakfast', 'lunch', 'dinner', 'snack', 'main dish', 'side dish', 'dessert', 'drink']
-  }],
-  macroCategory: { 
-    type: String, 
-    enum: ['protein', 'carb', 'fat', 'balanced'],
-    default: 'balanced' 
-  }
-});
-
-EmbeddedMealSchema.pre('save', async function (next) {
-    try {
-  
-      const macros = await calculateMealMacros(this.foodItems);
-  
-      this.totalCalories = macros.totalCalories;
-      this.totalProtein = macros.totalProtein;
-      this.totalCarbs = macros.totalCarbs;
-      this.totalFat = macros.totalFat;
-
-
-      const macroValues = [
-        { name: 'protein', value: this.totalProtein },
-        { name: 'carb', value: this.totalCarbs },
-        { name: 'fat', value: this.totalFat },
-      ];
-  
-
-      macroValues.sort((a, b) => b.value - a.value);
-  
-      const maxMacro = macroValues[0];
-      const secondMaxMacro = macroValues[1];
-  
-      const threshold = 0.15;
-  
-      if (secondMaxMacro.value === 0) {
-        this.macroCategory = maxMacro.name;
-      } else if ((maxMacro.value - secondMaxMacro.value) / secondMaxMacro.value >= threshold) {
-        this.macroCategory = maxMacro.name;
-      } else {
-        this.macroCategory = 'balanced';
-      }
-  
-      next();
-    } catch (err) {
-      next(err);
-    }
-});
-
-
-const EmbeddedTimedMealConfig =new mongoose.Schema({
-  name:{type:String,required:true},
+const EmbeddedTimedMealConfig = new mongoose.Schema({
+  name: { type: String, required: true },
   type: { 
     type: String, 
     enum: ["breakfast", "lunch", "dinner", "snack", "brunch", "supper"], 
     required: true 
   },
-  caloriePortion:{type:Number,required:true},
-  carbPortion:{type:Number,required:true},
-  proteinPortion:{type:Number,required:true},
-  fatPortion:{type:Number,required:true},
-  order:{type:Number,required:true}
-})
+  caloriePortion: { type: Number, required: true },
+  carbPortion: { type: Number, required: true },
+  proteinPortion: { type: Number, required: true },
+  fatPortion: { type: Number, required: true },
+  order: { type: Number, required: true }
+});
 
 const UserSchema = new mongoose.Schema({
   name: String,
@@ -118,15 +50,15 @@ const UserSchema = new mongoose.Schema({
     carbs: Number,
     fats: Number,
   },
-  myMeals: [EmbeddedMealSchema],
   timedMealConfig: {
     type: [EmbeddedTimedMealConfig],
     default: [
-      { name: 'Breakfast', type:'breakfast', caloriePortion: 0.3, carbPortion: 0.35, proteinPortion: 0.3, fatPortion: 0.3, order: 0 },
-      { name: 'Lunch', type:'lunch', caloriePortion: 0.4, carbPortion: 0.4, proteinPortion: 0.35, fatPortion: 0.35, order: 1 },
-      { name: 'Dinner', type:'dinner', caloriePortion: 0.3, carbPortion: 0.25, proteinPortion: 0.35, fatPortion: 0.35, order: 2 }
+      { name: 'Breakfast', type: 'breakfast', caloriePortion: 0.3, carbPortion: 0.35, proteinPortion: 0.3, fatPortion: 0.3, order: 0 },
+      { name: 'Lunch', type: 'lunch', caloriePortion: 0.4, carbPortion: 0.4, proteinPortion: 0.35, fatPortion: 0.35, order: 1 },
+      { name: 'Dinner', type: 'dinner', caloriePortion: 0.3, carbPortion: 0.25, proteinPortion: 0.35, fatPortion: 0.35, order: 2 }
     ]
   },
+  myMeals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'UserMeal' }],
   weekPlan: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'weekPlan'
@@ -134,12 +66,13 @@ const UserSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 UserSchema.pre('save', async function (next) {
-  if (this.isModified('password'))
+  if (this.isModified('password')) {
     this.password = await bcrypt.hash(this.password, 10);
+  }
 
-  if (!this.manualNutrition || !this.nutritionalRequirement) {
+  if (!this.manualNutrition && (this.isModified('gender') || this.isModified('age') || 
+      this.isModified('weight') || this.isModified('height') || this.isModified('activityLevel'))) {
     this.nutritionalRequirement = calculateNutrition(this);
-    this.manualNutrition = false;
   }
 
   next();

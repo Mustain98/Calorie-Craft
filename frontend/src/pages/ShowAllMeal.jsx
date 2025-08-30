@@ -3,8 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "../components/sideBar";
-import MealModal from "../components/MealModal";
-import ShowMeal from "../components/ShowMeal";
+import MealModal from "../components/MealComponents/MealModal";
+import ShowMeal from "../components/MealComponents/ShowMeal";
 import { toast } from "react-toastify";
 
 export default function ShowAllMeal() {
@@ -16,6 +16,10 @@ export default function ShowAllMeal() {
   const [userMeals, setUserMeals] = useState([]);
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [showNutritionModal, setShowNutritionModal] = useState(false);
+  const [loadingMeal, setLoadingMeal] = useState(false);
+  const [isDeleting, setisDeleting] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const tab = "my,all";
 
   useEffect(() => {
@@ -23,7 +27,7 @@ export default function ShowAllMeal() {
     if (!token) return navigate("/signin");
 
     axios
-      .get("http://localhost:4000/api/users/me", {
+      .get(`${process.env.REACT_APP_API_BASE_URL}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setUserData(res.data))
@@ -32,11 +36,11 @@ export default function ShowAllMeal() {
         navigate("/signin");
       });
 
-    axios.get("http://localhost:4000/api/meal")
+    axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/meal`)
       .then((res) => setAllMeals(res.data))
       .catch((err) => console.error("Failed to load meals:", err));
 
-    axios.get("http://localhost:4000/api/users/me/myMeals", {
+    axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/users/me/myMeals`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setUserMeals(res.data || []))
@@ -49,10 +53,38 @@ export default function ShowAllMeal() {
   const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
   const filteredMeals = activeTab === "my" ? userMeals : allMeals;
 
-  const handleMealClick = (meal) => {
-    setSelectedMeal(meal);
-    setShowNutritionModal(true);
+  const handleMealClick = async (meal) => {
+    const token = localStorage.getItem("token");
+    try {
+      setLoadingMeal(true);
+
+      let detail;
+      if (activeTab === "all") {
+        // system meal
+        const { data } = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/meal/${meal._id}`);
+        detail = data;
+      } else if (activeTab === "my") {
+        // user's embedded meal
+        const { data } = await axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}/api/users/me/myMeals/${meal._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        detail = data;
+      } else {
+        // fallback (other tabs, if any)
+        detail = meal;
+      }
+
+      setSelectedMeal(detail);
+      setShowNutritionModal(true);
+    } catch (err) {
+      console.error("Failed to load meal details:", err);
+      toast.error("Failed to load meal details");
+    } finally {
+      setLoadingMeal(false);
+    }
   };
+
   const closeNutritionModal = () => {
     setSelectedMeal(null);
     setShowNutritionModal(false);
@@ -61,8 +93,9 @@ export default function ShowAllMeal() {
   const handleDeleteMeal = async () => {
     const token = localStorage.getItem("token");
     try {
+      setisDeleting(true);
       await axios.delete(
-        `http://localhost:4000/api/users/me/myMeals/${selectedMeal._id}`,
+        `${process.env.REACT_APP_API_BASE_URL}/api/users/me/myMeals/${selectedMeal._id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -72,47 +105,63 @@ export default function ShowAllMeal() {
       closeNutritionModal();
     } catch (err) {
       toast.error("Failed to delete meal");
+    }finally{
+      setisDeleting(false);
     }
   };
 
-  const handleSaveToMyMeals = async (meal) => {
-    const token = localStorage.getItem("token");
-    try {
-      const payload = {
-        name: meal.name,
-        imageUrl: meal.imageUrl || meal.image || "",
-        foodItems: meal.foodItems.map((item) => ({
-          food: typeof item.food === "object" ? item.food._id : item.food,
-          quantity: item.quantity,
-        })),
-      };
+const handleSaveToMyMeals = async (meal) => {
+  const token = localStorage.getItem("token");
+  try {
+    setIsSaving(true);
+    const payload = {
+      name: meal.name,
+      description: meal.description || "",
+      imageUrl: meal.imageUrl || meal.image || "",
+      imageId: meal.imageId || null,
+      categories: Array.isArray(meal.categories) ? meal.categories : [],
+      macroCategory: meal.macroCategory || null,
+      portionSize: meal.portionSize ?? 0,
+      totalCalories: meal.totalCalories ?? 0,
+      totalProtein:  meal.totalProtein  ?? 0,
+      totalCarbs:    meal.totalCarbs    ?? 0,
+      totalFat:      meal.totalFat      ?? 0,
+      foodItems: (meal.foodItems || []).map((item) => ({
+        food: (typeof item.food === "object" ? item.food._id : item.food),
+        quantity: Number(item.quantity || 1),
+      })),
+    };
 
-      const res = await axios.post(
-        "http://localhost:4000/api/users/me/myMeals",
-        payload,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setUserMeals((prev) => [...prev, res.data.meal]);
-      setSelectedMeal(res.data.meal);
-      toast.success(res.data.message || "Meal saved to your collection" );
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to save meal");
-    }
-  };
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_BASE_URL}/api/users/me/myMeals`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setUserMeals((prev) => [...prev, res.data.meal]);
+    setSelectedMeal(res.data.meal);
+    toast.success(res.data.message || "Meal saved to your collection");
+  } catch (err) {
+    toast.error(err.response?.data?.error || "Failed to save meal");
+  }finally{
+    setIsSaving(false);
+  }
+};
 
   const handleShareMeal = async () => {
     const token = localStorage.getItem("token");
     try {
+      setIsSharing(true);
       const res=await axios.post(
-        `http://localhost:4000/api/users/me/shareMeal/${selectedMeal._id}`,
+        `${process.env.REACT_APP_API_BASE_URL}/api/users/me/shareMeal/${selectedMeal._id}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success(res.data.message || "Meal shared successfully");
+      toast.success("Meal shared successfully");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to share meal");
+      toast.error("Failed to share meal");
+    }finally{
+      setIsSharing(false);
     }
   };
 
@@ -132,7 +181,7 @@ export default function ShowAllMeal() {
             sidebarVisible={sidebarVisible}
             handleMealClick={handleMealClick}
             tab="my,all"
-            baseUrl="http://localhost:4000/api"
+            baseUrl={`${process.env.REACT_APP_API_BASE_URL}/api`}
             authToken={localStorage.getItem("token")}
             filterTabs={["all"]}
         />
@@ -146,6 +195,9 @@ export default function ShowAllMeal() {
           handleSaveToMyMeals={handleSaveToMyMeals}
           handleShareMeal={handleShareMeal}
           activeTab={activeTab}
+          isDeleting={isDeleting}
+          isSharing={isSharing}
+          isSaving={isSaving}
         />
       )}
     </div>
