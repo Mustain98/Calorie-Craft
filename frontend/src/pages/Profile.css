@@ -1,6 +1,6 @@
 .profile-page {
   display: flex;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: "Segoe UI", sans-serif;
   position: relative;
   min-height: 100vh;
 }
@@ -62,7 +62,7 @@
   padding: 24px;
   background-color: #f9f9f9;
   border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .profile-form {
@@ -108,4 +108,36 @@
 .update-btn:hover,
 .change-password-btn:hover {
   background-color: #85b800;
+}
+
+/* Put these in Profile.css */
+.label-row-wrapper {
+  margin-bottom: 4px;
+}
+
+.label-container {
+  position: relative;
+  display: inline-block;
+  padding-right: 56px; /* keep space for the Edit button */
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 6px;
+}
+
+.label-text {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.absolute-edit-btn {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: black;
+  cursor: pointer;
+  padding: 0 6px;
+  font-size: 13px;
+  line-height: 1;
 }

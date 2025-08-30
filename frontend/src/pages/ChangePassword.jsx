@@ -30,7 +30,6 @@ export default function ChangePasswordPage() {
       const token = localStorage.getItem("token");
       if (!token) {
         setError("You are not logged in.");
-        navigate("/signin");
         return;
       }
 
@@ -59,8 +58,62 @@ export default function ChangePasswordPage() {
     <div className="password-page">
       <LeftSection />
 
-      <div className="password-right">
-        <form className="password-form" onSubmit={handleSubmit}>
+      {/* Back button at top-left */}
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        aria-label="Go back"
+        style={{
+          position: "fixed",
+          top: 8,
+          left: 8,
+          zIndex: 3000,
+          background: "transparent",
+          border: "none",
+          padding: 6,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          lineHeight: 1,
+        }}
+      >
+        {/* custom arrow + line icon */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          {/* left arrow */}
+          <path
+            d="M14 6L8 12L14 18"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* horizontal line right next to arrow */}
+          <line
+            x1="8"
+            y1="12"
+            x2="20"
+            y2="12"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+
+      <div className="password-right" style={{ position: "relative" }}>
+        <form
+          className="password-form"
+          onSubmit={handleSubmit}
+          style={{ paddingTop: 48 }}
+        >
           <h2>Change Password</h2>
 
           <input
