@@ -22,17 +22,50 @@ export default function AdminSidebar({ visible, AdminData = {} }) {
     }, 500);
   };
 
-  const { name = "Admin", email = "", avatar } = AdminData;
+  const { name = "Admin", email = "", accessLevel = "", avatar } = AdminData;
 
   const menuItems = [
-    { label: "Profile", path: "/adminpage", icon: <FiUser className="mr-3 text-lg" /> },
-    { label: "Create Meal", path: "/admincreatemeal", icon: <FiPlusCircle className="mr-3 text-lg" /> },
-    { label: "Create Ingredients", path: "/addingredient", icon: <FiDatabase className="mr-3 text-lg" /> },
-    { label: "Show Meals", path: "/adminshowmeals", icon: <FiList className="mr-3 text-lg" /> },
-    { label: "Show Ingredients", path: "/showingredients", icon: <FiList className="mr-3 text-lg" /> },
-    { label: "Create Admin", path: "/createadmin", icon: <FiUser className="mr-3 text-lg" /> },
-    { label: "Log out", action: handleLogout, icon: <FiLogOut className="mr-3 text-lg" /> },
+    {
+      label: "Profile",
+      path: "/adminpage",
+      icon: <FiUser className="mr-3 text-lg" />,
+    },
+    {
+      label: "Create Meal",
+      path: "/admincreatemeal",
+      icon: <FiPlusCircle className="mr-3 text-lg" />,
+    },
+    {
+      label: "Create Ingredients",
+      path: "/addingredient",
+      icon: <FiDatabase className="mr-3 text-lg" />,
+    },
+    {
+      label: "Show Meals",
+      path: "/adminshowmeals",
+      icon: <FiList className="mr-3 text-lg" />,
+    },
+    {
+      label: "Show Ingredients",
+      path: "/showingredients",
+      icon: <FiList className="mr-3 text-lg" />,
+    },
   ];
+
+  if (Number(accessLevel) === 2) {
+    menuItems.push({
+      label: "Create Admin",
+      path: "/createadmin",
+      icon: <FiUser className="mr-3 text-lg" />,
+    });
+  }
+
+  // Always add Logout at the end
+  menuItems.push({
+    label: "Log out",
+    action: handleLogout,
+    icon: <FiLogOut className="mr-3 text-lg" />,
+  });
 
   return (
     <aside className="fixed top-0 left-0 h-screen w-64 bg-white shadow-2xl flex flex-col items-center p-4 z-50">
@@ -62,7 +95,11 @@ export default function AdminSidebar({ visible, AdminData = {} }) {
               key={idx}
               onClick={() => (item.path ? navigate(item.path) : item.action())}
               className={`flex items-center w-full px-3 py-3 text-left text-gray-700 rounded-lg font-medium transition-colors shadow-sm border-l-4 border-transparent text-sm flex-1
-                ${isActive ? "bg-green-100 text-green-800 border-green-500" : "hover:bg-green-100 hover:text-green-800 hover:border-green-500"}
+                ${
+                  isActive
+                    ? "bg-green-100 text-green-800 border-green-500"
+                    : "hover:bg-green-100 hover:text-green-800 hover:border-green-500"
+                }
               `}
             >
               {item.icon}
