@@ -8,7 +8,7 @@ const foodItemRoute = require('./src/routes/fooditem');
 
 
 const app = express();
-const PORT = process.env.ADMIN_PORT;
+const PORT = process.env.ADMIN_PORT || 5001;
 
 app.use(cors({ 
   origin: ['http://localhost:3002',
