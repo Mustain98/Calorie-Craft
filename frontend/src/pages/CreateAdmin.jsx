@@ -40,10 +40,15 @@ export default function CreateAdminPage() {
   };
 
   const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
+  const isStrongPassword = (p) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/.test(p);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    if (!isStrongPassword(formData.password)) {
+     setError("Password must be ≥6 chars and include lowercase, uppercase, and a number.");
+     return;
+    }
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match.');
       return;

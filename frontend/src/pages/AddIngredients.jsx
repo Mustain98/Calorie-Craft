@@ -15,7 +15,7 @@ export default function AddIngreidentPage() {
       const token = localStorage.getItem('token');
       if (!token) return navigate('/adminsignin');
 
-      axios.get('http://localhost:5001/api/admin/me', {
+      axios.get(`${process.env.REACT_APP_API_ADMIN_URL}/api/admin/me`, {
       headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => setAdminData(res.data))
@@ -56,7 +56,7 @@ export default function AddIngreidentPage() {
     const token = localStorage.getItem('token');
      try {
        const res = await axios.post(
-       'http://localhost:5001/api/admin/foodItem',
+       `${process.env.REACT_APP_API_ADMIN_URL}/api/admin/foodItem`,
        formData,
        { headers: { Authorization: `Bearer ${token}` } }
      );

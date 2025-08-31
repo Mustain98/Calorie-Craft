@@ -10,7 +10,11 @@ const foodItemRoute = require('./src/routes/fooditem');
 const app = express();
 const PORT = process.env.ADMIN_PORT;
 
-app.use(cors({ origin: 'http://localhost:3002' }));
+app.use(cors({ 
+  origin: ['http://localhost:3002',
+    'https://calorie-craft-admin-frontend.onrender.com',
+  ]
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

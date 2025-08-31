@@ -33,7 +33,7 @@ export default function AdminSigninPage() {
     }
 
     try {
-      const res = await axios.post('http://localhost:5001/api/admin/login', formData);
+      const res = await axios.post(`${process.env.REACT_APP_API_ADMIN_URL}/api/admin/login`, formData);
 
       // Store token & user data in localStorage
       localStorage.setItem('token', res.data.token);
