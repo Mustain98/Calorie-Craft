@@ -110,171 +110,185 @@ export default function ProfilePage() {
       <main className={`profile-main ${sidebarVisible ? '' : 'sidebar-hidden'}`}>
         <div className="profile-form-container">
           <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
-            <div className="form-header">
-              <h2>Your Profile</h2>
-              <button
-                type="button"
-                className="update-btn"
-                onClick={handleUpdateProfile}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Updating...' : 'Update Profile'}
-              </button>
-            </div>
+  <div className="form-header">
+    <h2>Your Profile</h2>
+    <button
+      type="button"
+      className="update-btn"
+      onClick={handleUpdateProfile}
+      disabled={isSubmitting}
+    >
+      {isSubmitting ? 'Updating...' : 'Update Profile'}
+    </button>
+  </div>
 
-            {/* Email */}
-            <div className="label-row-wrapper">
-              <div className="label-container">
-                <label className="label-text">Email address</label>
-                <button
-                  type="button"
-                  className="absolute-edit-btn"
-                  onClick={() => handleToggleEdit('email')}
-                  aria-pressed={editable.email}
-                >
-                  {editable.email ? 'Done' : 'Edit'}
-                </button>
-              </div>
-            </div>
-            <input
-              ref={(el) => (inputRefs.current.email = el)}
-              type="text"
-              name="email"
-              value={formData.email || ''}
-              onChange={handleChange}
-              readOnly={!editable.email}
-            />
+  {/* Email */}
+  <div className="label-row-wrapper">
+    <div className="label-container">
+      <label className="label-text">Email address</label>
+      {/* removed the old Edit button from here */}
+    </div>
+  </div>
+  <input
+    ref={(el) => (inputRefs.current.email = el)}
+    type="text"
+    name="email"
+    value={formData.email || ''}
+    onChange={handleChange}
+    readOnly={!editable.email}
+  />
+  <div className="edit-row">
+    <button
+      type="button"
+      className="edit-below-btn"
+      onClick={() => handleToggleEdit('email')}
+      aria-pressed={editable.email}
+    >
+      {editable.email ? 'Done' : 'Edit'}
+    </button>
+  </div>
 
-            {/* Sex */}
-            <div className="label-row-wrapper">
-              <div className="label-container">
-                <label className="label-text">Sex</label>
-                <button
-                  type="button"
-                  className="absolute-edit-btn"
-                  onClick={() => handleToggleEdit('gender')}
-                  aria-pressed={editable.gender}
-                >
-                  {editable.gender ? 'Done' : 'Edit'}
-                </button>
-              </div>
-            </div>
-            <input
-              ref={(el) => (inputRefs.current.gender = el)}
-              type="text"
-              name="gender"
-              value={formData.gender || ''}
-              onChange={handleChange}
-              readOnly={!editable.gender}
-            />
+  {/* Sex */}
+  <div className="label-row-wrapper">
+    <div className="label-container">
+      <label className="label-text">Sex</label>
+    </div>
+  </div>
+  <input
+    ref={(el) => (inputRefs.current.gender = el)}
+    type="text"
+    name="gender"
+    value={formData.gender || ''}
+    onChange={handleChange}
+    readOnly={!editable.gender}
+  />
+  <div className="edit-row">
+    <button
+      type="button"
+      className="edit-below-btn"
+      onClick={() => handleToggleEdit('gender')}
+      aria-pressed={editable.gender}
+    >
+      {editable.gender ? 'Done' : 'Edit'}
+    </button>
+  </div>
 
-            {/* Age */}
-            <div className="label-row-wrapper">
-              <div className="label-container">
-                <label className="label-text">Age</label>
-                <button
-                  type="button"
-                  className="absolute-edit-btn"
-                  onClick={() => handleToggleEdit('age')}
-                  aria-pressed={editable.age}
-                >
-                  {editable.age ? 'Done' : 'Edit'}
-                </button>
-              </div>
-            </div>
-            <input
-              ref={(el) => (inputRefs.current.age = el)}
-              type="text"
-              name="age"
-              value={formData.age || ''}
-              onChange={handleChange}
-              readOnly={!editable.age}
-            />
+  {/* Age */}
+  <div className="label-row-wrapper">
+    <div className="label-container">
+      <label className="label-text">Age</label>
+    </div>
+  </div>
+  <input
+    ref={(el) => (inputRefs.current.age = el)}
+    type="text"
+    name="age"
+    value={formData.age || ''}
+    onChange={handleChange}
+    readOnly={!editable.age}
+  />
+  <div className="edit-row">
+    <button
+      type="button"
+      className="edit-below-btn"
+      onClick={() => handleToggleEdit('age')}
+      aria-pressed={editable.age}
+    >
+      {editable.age ? 'Done' : 'Edit'}
+    </button>
+  </div>
 
-            {/* Weight */}
-            <div className="label-row-wrapper">
-              <div className="label-container">
-                <label className="label-text">Weight (kg)</label>
-                <button
-                  type="button"
-                  className="absolute-edit-btn"
-                  onClick={() => handleToggleEdit('weight')}
-                  aria-pressed={editable.weight}
-                >
-                  {editable.weight ? 'Done' : 'Edit'}
-                </button>
-              </div>
-            </div>
-            <input
-              ref={(el) => (inputRefs.current.weight = el)}
-              type="text"
-              name="weight"
-              value={formData.weight || ''}
-              onChange={handleChange}
-              readOnly={!editable.weight}
-            />
+  {/* Weight */}
+  <div className="label-row-wrapper">
+    <div className="label-container">
+      <label className="label-text">Weight (kg)</label>
+    </div>
+  </div>
+  <input
+    ref={(el) => (inputRefs.current.weight = el)}
+    type="text"
+    name="weight"
+    value={formData.weight || ''}
+    onChange={handleChange}
+    readOnly={!editable.weight}
+  />
+  <div className="edit-row">
+    <button
+      type="button"
+      className="edit-below-btn"
+      onClick={() => handleToggleEdit('weight')}
+      aria-pressed={editable.weight}
+    >
+      {editable.weight ? 'Done' : 'Edit'}
+    </button>
+  </div>
 
-            {/* Height */}
-            <div className="label-row-wrapper">
-              <div className="label-container">
-                <label className="label-text">Height (cm)</label>
-                <button
-                  type="button"
-                  className="absolute-edit-btn"
-                  onClick={() => handleToggleEdit('height')}
-                  aria-pressed={editable.height}
-                >
-                  {editable.height ? 'Done' : 'Edit'}
-                </button>
-              </div>
-            </div>
-            <input
-              ref={(el) => (inputRefs.current.height = el)}
-              type="text"
-              name="height"
-              value={formData.height || ''}
-              onChange={handleChange}
-              readOnly={!editable.height}
-            />
+  {/* Height */}
+  <div className="label-row-wrapper">
+    <div className="label-container">
+      <label className="label-text">Height (cm)</label>
+    </div>
+  </div>
+  <input
+    ref={(el) => (inputRefs.current.height = el)}
+    type="text"
+    name="height"
+    value={formData.height || ''}
+    onChange={handleChange}
+    readOnly={!editable.height}
+  />
+  <div className="edit-row">
+    <button
+      type="button"
+      className="edit-below-btn"
+      onClick={() => handleToggleEdit('height')}
+      aria-pressed={editable.height}
+    >
+      {editable.height ? 'Done' : 'Edit'}
+    </button>
+  </div>
 
-            {/* Activity Level */}
-            <div className="label-row-wrapper">
-              <div className="label-container">
-                <label className="label-text">Activity Level</label>
-                <button
-                  type="button"
-                  className="absolute-edit-btn"
-                  onClick={() => handleToggleEdit('activityLevel')}
-                  aria-pressed={editable.activityLevel}
-                >
-                  {editable.activityLevel ? 'Done' : 'Edit'}
-                </button>
-              </div>
-            </div>
-            <select
-              ref={(el) => (inputRefs.current.activityLevel = el)}
-              name="activityLevel"
-              value={formData.activityLevel || ''}
-              onChange={handleChange}
-              disabled={!editable.activityLevel}
-              required
-            >
-              <option value="">Select activity level</option>
-              <option value="sedentary">Sedentary</option>
-              <option value="light">Lightly active</option>
-              <option value="moderate">Moderately active</option>
-              <option value="active">Active</option>
-              <option value="very active">Very active</option>
-            </select>
+  {/* Activity Level */}
+  <div className="label-row-wrapper">
+    <div className="label-container">
+      <label className="label-text">Activity Level</label>
+    </div>
+  </div>
+  <select
+    ref={(el) => (inputRefs.current.activityLevel = el)}
+    name="activityLevel"
+    value={formData.activityLevel || ''}
+    onChange={handleChange}
+    disabled={!editable.activityLevel}
+    required
+  >
+    <option value="">Select activity level</option>
+    <option value="sedentary">Sedentary</option>
+    <option value="light">Lightly active</option>
+    <option value="moderate">Moderately active</option>
+    <option value="active">Active</option>
+    <option value="very active">Very active</option>
+  </select>
+  <div className="edit-row">
+    <button
+      type="button"
+      className="edit-below-btn"
+      onClick={() => handleToggleEdit('activityLevel')}
+      aria-pressed={editable.activityLevel}
+    >
+      {editable.activityLevel ? 'Done' : 'Edit'}
+    </button>
+  </div>
 
-            <button
-              type="button"
-              className="change-password-btn"
-              onClick={handleChangePassword}
-            >
-              Change Password
-            </button>
-          </form>
+  <button
+    type="button"
+    className="change-password-btn"
+    onClick={handleChangePassword}
+  >
+    Change Password
+  </button>
+</form>
+
         </div>
       </main>
     </div>
