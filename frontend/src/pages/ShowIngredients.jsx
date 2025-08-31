@@ -65,7 +65,9 @@ export default function ShowIngredients() {
 
   // handle delete
   const handleDelete = async (id) => {
-    const ok = window.confirm("Are you sure you want to delete this ingredient?");
+    const ok = window.confirm(
+      "Are you sure you want to delete this ingredient?"
+    );
     if (!ok) return;
 
     setDeletingId(id);
@@ -92,15 +94,23 @@ export default function ShowIngredients() {
       <button className="toggle-btn" onClick={toggleSidebar}>
         &#8942;
       </button>
-      {sidebarVisible && <AdminSidebar visible={sidebarVisible} AdminData={adminData} />}
+      {sidebarVisible && (
+        <AdminSidebar visible={sidebarVisible} AdminData={adminData} />
+      )}
 
-      <div className={`transition-all duration-300 flex-1 p-6 ${sidebarVisible ? "ml-[250px]" : ""}`}>
+      <div
+        className={`transition-all duration-300 flex-1 p-6 ${
+          sidebarVisible ? "ml-[250px]" : ""
+        }`}
+      >
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Ingredients List</h2>
 
             <div className="flex items-center space-x-2">
-              <label htmlFor="category" className="text-sm">Category:</label>
+              <label htmlFor="category" className="text-sm">
+                Category:
+              </label>
               <select
                 id="category"
                 value={selectedCategory}
@@ -109,7 +119,9 @@ export default function ShowIngredients() {
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
-                    {cat === "all" ? "All" : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    {cat === "all"
+                      ? "All"
+                      : cat.charAt(0).toUpperCase() + cat.slice(1)}
                   </option>
                 ))}
               </select>
@@ -119,33 +131,69 @@ export default function ShowIngredients() {
           <table className="w-full border border-gray-300 table-auto border-collapse">
             <thead>
               <tr className="bg-gray-200">
-                <th className="border border-gray-400 px-4 py-2 text-left">Name</th>
-                <th className="border border-gray-400 px-4 py-2 text-center">Calories</th>
-                <th className="border border-gray-400 px-4 py-2 text-center">Carbs (g)</th>
-                <th className="border border-gray-400 px-4 py-2 text-center">Protein (g)</th>
-                <th className="border border-gray-400 px-4 py-2 text-center">Fat (g)</th>
-                <th className="border border-gray-400 px-4 py-2 text-center">Category</th>
-                <th className="border border-gray-400 px-4 py-2 text-center">Total Unit Weight</th>
-                <th className="border border-gray-400 px-4 py-2 text-center">Measuring Unit</th>
-                <th className="border border-gray-400 px-4 py-2 text-center">Actions</th>
+                <th className="border border-gray-400 px-4 py-2 text-left">
+                  Name
+                </th>
+                <th className="border border-gray-400 px-4 py-2 text-center">
+                  Calories
+                </th>
+                <th className="border border-gray-400 px-4 py-2 text-center">
+                  Carbs (g)
+                </th>
+                <th className="border border-gray-400 px-4 py-2 text-center">
+                  Protein (g)
+                </th>
+                <th className="border border-gray-400 px-4 py-2 text-center">
+                  Fat (g)
+                </th>
+                <th className="border border-gray-400 px-4 py-2 text-center">
+                  Category
+                </th>
+                <th className="border border-gray-400 px-4 py-2 text-center">
+                  Total Unit Weight
+                </th>
+                <th className="border border-gray-400 px-4 py-2 text-center">
+                  Measuring Unit
+                </th>
+                <th className="border border-gray-400 px-4 py-2 text-center">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {fooditems.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="text-center p-4">No ingredients found.</td>
+                  <td colSpan="9" className="text-center p-4">
+                    No ingredients found.
+                  </td>
                 </tr>
               ) : (
                 fooditems.map((item) => (
                   <tr key={item._id} className="hover:bg-gray-100">
-                    <td className="border border-gray-300 px-4 py-2">{item.name}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{item.calories}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{item.carbs}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{item.protein}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{item.fat}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{item.category}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{item.totalunitweight}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{item.measuringUnit}</td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {item.name}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      {item.calories}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      {item.carbs}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      {item.protein}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      {item.fat}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      {item.category}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      {item.totalunitweight}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      {item.measuringUnit}
+                    </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
                       <button
                         onClick={() => handleDelete(item._id)}
@@ -153,7 +201,9 @@ export default function ShowIngredients() {
                         title="Delete"
                         aria-label={`Delete ${item.name}`}
                         className={`inline-flex items-center justify-center p-2 rounded ${
-                          deletingId === item._id ? "opacity-50 cursor-not-allowed" : "hover:bg-red-50"
+                          deletingId === item._id
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:bg-red-50"
                         }`}
                       >
                         <svg
@@ -182,4 +232,3 @@ export default function ShowIngredients() {
     </div>
   );
 }
-
