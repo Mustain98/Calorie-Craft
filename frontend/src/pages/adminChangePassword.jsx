@@ -4,14 +4,14 @@ import LeftSection from "../components/LeftSection";
 import UpdatePasswordComponent from "../components/updatePassword";
 import { useNavigate } from "react-router-dom";
 
-export default function ChangePasswordPage() {
+export default function AdminChangePasswordPage() {
   const navigate = useNavigate();
 
-  // User Password Regex: 6+ characters, uppercase, lowercase, number
-  const userPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
-  const message = "Password must be at least 6 characters long, with at least one uppercase, one lowercase, and one number.";
+  // Admin Password Regex: 8+ characters, uppercase, lowercase, special character
+  const adminPasswordRegex =  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/;
+  const message = "Password must be at least 8 characters long, with at least one uppercase, one lowercase, and one special character.";
 
-  const endpoint = `${process.env.REACT_APP_API_BASE_URL}/api/users/me/password`;
+  const endpoint = `${process.env.REACT_APP_API_ADMIN_URL}/api/admin/me/password`;
 
   return (
     <div className="password-page">
@@ -38,12 +38,12 @@ export default function ChangePasswordPage() {
           <UpdatePasswordComponent
             endpoint={endpoint}
             tokenKey="token"
-            title="Change User Password"
+            title="Change Admin Password"
             onSuccess={() => {
               localStorage.removeItem("token");
-              navigate("/signin");
+              navigate("/adminsignin");
             }}
-            passwordRegex={userPasswordRegex}
+            passwordRegex={adminPasswordRegex}
             message={message}
           />
         </div>
