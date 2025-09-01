@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import MealCard from "../components/TimedMealConfig";
 import DynamicPercentageSliders from "../components/timedMealSetting";
 import Sidebar from "../components/sideBar";
@@ -10,14 +11,12 @@ import { toast } from "react-toastify";
 const API_BASE = `${process.env.REACT_APP_API_BASE_URL}/api`;
 
 const MealPlanSetting = () => {
-  // Left column cards: label (name), type, order
   const [mealCards, setMealCards] = useState([
     { id: 1, name: "null", type: "null", order: 0 },
     { id: 2, name: "null", type: "null", order: 1 },
     { id: 3, name: "null", type: "null", order: 2 },
   ]);
 
-  // Right column sliders: client stores percentages (0..100)
   const [slidersByPortion, setSlidersByPortion] = useState({
     caloriePortion: [null, null, null],
     carbPortion: [null, null, null],
@@ -41,29 +40,19 @@ const MealPlanSetting = () => {
 
     (async () => {
       try {
-        // current user
         const me = await axios.get(`${API_BASE}/users/me`, { headers });
         setUserData(me.data);
 
-        // timed meal configuration
-        const conf = await axios.get(
-          `${API_BASE}/users/me/myMealPlanSetting`,
-          { headers }
-        );
-
+        const conf = await axios.get(`${API_BASE}/users/me/myMealPlanSetting`, {
+          headers,
+        });
         const arr = Array.isArray(conf.data?.timedMealConfiguration)
           ? conf.data.timedMealConfiguration
           : [];
 
-        if (!arr.length) {
-          console.warn("[myMealPlanSetting] No config found, using defaults");
-          return;
-        }
+        if (!arr.length) return;
 
-        // normalize order + cards
-        const sorted = [...arr].sort(
-          (a, b) => (a.order ?? 0) - (b.order ?? 0)
-        );
+        const sorted = [...arr].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         const nextCards = sorted.map((x, i) => ({
           id: i + 1,
           name: x.name ?? `Meal ${i + 1}`,
@@ -72,10 +61,8 @@ const MealPlanSetting = () => {
         }));
         setMealCards(nextCards);
 
-        // decimals → percentages
         const toPct = (v) =>
           Math.round((Number(v || 0) * 100 + Number.EPSILON) * 100) / 100;
-
         setSlidersByPortion({
           caloriePortion: sorted.map((x) => toPct(x.caloriePortion)),
           carbPortion: sorted.map((x) => toPct(x.carbPortion)),
@@ -93,23 +80,20 @@ const MealPlanSetting = () => {
   const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
 
   const addCard = () => {
-    const nextId = mealCards.length ? mealCards[mealCards.length - 1].id + 1 : 1;
+    const nextId = mealCards.length
+      ? mealCards[mealCards.length - 1].id + 1
+      : 1;
     const nextOrder = mealCards.length;
-    const nextCards = [
+    setMealCards([
       ...mealCards,
       { id: nextId, name: "", type: "", order: nextOrder },
-    ];
-    setMealCards(nextCards);
-
-    setSlidersByPortion((prev) => {
-      const expand = (arr = []) => [...arr, 0];
-      return {
-        caloriePortion: expand(prev.caloriePortion),
-        carbPortion: expand(prev.carbPortion),
-        proteinPortion: expand(prev.proteinPortion),
-        fatPortion: expand(prev.fatPortion),
-      };
-    });
+    ]);
+    setSlidersByPortion((prev) => ({
+      caloriePortion: [...prev.caloriePortion, 0],
+      carbPortion: [...prev.carbPortion, 0],
+      proteinPortion: [...prev.proteinPortion, 0],
+      fatPortion: [...prev.fatPortion, 0],
+    }));
   };
 
   const removeCard = (id) => {
@@ -121,15 +105,12 @@ const MealPlanSetting = () => {
       .map((m, i) => ({ ...m, order: i }));
     setMealCards(next);
 
-    setSlidersByPortion((prev) => {
-      const dropAt = (arr = []) => arr.filter((_, i) => i !== idx);
-      return {
-        caloriePortion: dropAt(prev.caloriePortion),
-        carbPortion: dropAt(prev.carbPortion),
-        proteinPortion: dropAt(prev.proteinPortion),
-        fatPortion: dropAt(prev.fatPortion),
-      };
-    });
+    setSlidersByPortion((prev) => ({
+      caloriePortion: prev.caloriePortion.filter((_, i) => i !== idx),
+      carbPortion: prev.carbPortion.filter((_, i) => i !== idx),
+      proteinPortion: prev.proteinPortion.filter((_, i) => i !== idx),
+      fatPortion: prev.fatPortion.filter((_, i) => i !== idx),
+    }));
   };
 
   const updateName = (id, value) => {
@@ -144,7 +125,33 @@ const MealPlanSetting = () => {
     );
   };
 
-  // --- Save to backend: PUT /users/me/updateMealPlanSetting
+  // --- handle drag end
+  const onDragEnd = (result) => {
+  const { source, destination } = result;
+  if (!destination) return;
+
+  const items = Array.from(mealCards);
+  const [reorderedItem] = items.splice(source.index, 1);
+  items.splice(destination.index, 0, reorderedItem);
+
+  const reorderedCards = items.map((m, i) => ({ ...m, order: i }));
+  setMealCards(reorderedCards);
+
+  // Reorder slidersByPortion to match new mealCards order
+  const newSliders = {};
+  Object.keys(slidersByPortion).forEach((key) => {
+    const arr = slidersByPortion[key];
+    const reorderedArr = reorderedCards.map((m) => {
+      const oldIndex = mealCards.findIndex((c) => c.id === m.id);
+      return arr[oldIndex];
+    });
+    newSliders[key] = reorderedArr;
+  });
+  setSlidersByPortion(newSliders);
+};
+
+
+  // --- Save meal plan to backend
   const handleSave = async () => {
     const token = localStorage.getItem("token");
     if (!token) return navigate("/signin");
@@ -156,7 +163,6 @@ const MealPlanSetting = () => {
 
     setSaving(true);
 
-    // convert percent → decimal
     const pct = (key) => slidersByPortion[key] || [];
     const toDec = (x) => Number(((x ?? 0) / 100).toFixed(4));
 
@@ -175,30 +181,18 @@ const MealPlanSetting = () => {
     const body = { timedMealConfig: payloadArray };
 
     try {
-      await axios.put(
-        `${API_BASE}/users/me/updateMealPlanSetting`,
-        body,
-        { headers }
-      );
+      await axios.put(`${API_BASE}/users/me/updateMealPlanSetting`, body, {
+        headers,
+      });
       toast.success("Meal plan setting saved");
     } catch (err) {
       if (err.response) {
-        console.error(
-          "Save failed (server):",
-          err.response.status,
-          err.response.data
-        );
         toast.error(
-          err.response?.data?.message ||
-            `Save failed (${err.response.status})`
+          err.response?.data?.message || `Save failed (${err.response.status})`
         );
         if (err.response.status === 401) navigate("/signin");
-      } else if (err.request) {
-        console.error("Save failed (network/CORS):", err.request);
-        toast.error("Network/CORS error. Check server.");
       } else {
-        console.error("Save failed (setup):", err.message);
-        toast.error("Client setup error. See console.");
+        toast.error("Save failed. Check console.");
       }
     } finally {
       setSaving(false);
@@ -206,7 +200,6 @@ const MealPlanSetting = () => {
   };
 
   // --- Generate week plan then navigate to /mealplan
-  // Backend route assumed: POST /api/weekplans  (adjust if you mounted differently)
   const handleGenerate = async () => {
     const token = localStorage.getItem("token");
     if (!token) return navigate("/signin");
@@ -223,22 +216,12 @@ const MealPlanSetting = () => {
       navigate("/mealplan");
     } catch (err) {
       if (err.response) {
-        console.error(
-          "Generate failed (server):",
-          err.response.status,
-          err.response.data
-        );
         toast.error(
-          err.response?.data?.message ||
-            `Generate failed (${err.response.status})`
+          err.response?.data?.message || `Generate failed (${err.response.status})`
         );
         if (err.response.status === 401) navigate("/signin");
-      } else if (err.request) {
-        console.error("Generate failed (network/CORS):", err.request);
-        toast.error("Network/CORS error. Check server.");
       } else {
-        console.error("Generate failed (setup):", err.message);
-        toast.error("Client setup error. See console.");
+        toast.error("Network/CORS error. Check server.");
       }
     } finally {
       setGenerating(false);
@@ -247,7 +230,7 @@ const MealPlanSetting = () => {
 
   return (
     <div className="flex min-h-screen relative bg-gray-50">
-      {/* Sidebar toggle button */}
+      {/* Sidebar toggle */}
       <button
         className="toggle-btn absolute top-4 left-4"
         onClick={toggleSidebar}
@@ -255,10 +238,8 @@ const MealPlanSetting = () => {
         &#8942;
       </button>
 
-      {/* Sidebar */}
       {userData && <Sidebar visible={sidebarVisible} userData={userData} />}
 
-      {/* Main content */}
       <div
         className="flex-1 flex justify-center items-start p-6 transition-all duration-300"
         style={{ marginLeft: sidebarVisible ? "250px" : "0px" }}
@@ -268,19 +249,50 @@ const MealPlanSetting = () => {
             !sidebarVisible ? "mx-auto" : ""
           }`}
         >
-          {/* Left Column: Cards */}
+          {/* Left Column */}
           <div className="flex-1 space-y-4" ref={leftColumnRef}>
-            {mealCards.map((meal) => (
-              <MealCard
-                key={meal.id}
-                customLabel={meal.name ?? ""}
-                type={meal.type ?? ""}
-                onCustomLabelChange={(val) => updateName(meal.id, val)}
-                onTypeChange={(val) => updateType(meal.id, val)}
-                onRemove={() => removeCard(meal.id)}
-              />
-            ))}
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="mealCardsDroppable">
+                {(provided) => (
+                  <div {...provided.droppableProps} ref={provided.innerRef}>
+                    {mealCards.map((meal, index) => (
+                      <Draggable
+                        key={meal.id}
+                        draggableId={meal.id.toString()}
+                        index={index}
+                      >
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`mb-2 transition-all ${
+                              snapshot.isDragging
+                                ? "scale-105 shadow-lg z-50"
+                                : ""
+                            }`}
+                          >
+                            <MealCard
+                              key={meal.id}
+                              customLabel={meal.name ?? ""}
+                              type={meal.type ?? ""}
+                              onCustomLabelChange={(val) =>
+                                updateName(meal.id, val)
+                              }
+                              onTypeChange={(val) => updateType(meal.id, val)}
+                              onRemove={() => removeCard(meal.id)}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
 
+            {/* Add / Save / Generate Buttons */}
             <div className="flex flex-col items-center space-y-3">
               <button
                 onClick={addCard}
@@ -294,7 +306,9 @@ const MealPlanSetting = () => {
                   onClick={handleSave}
                   disabled={saving}
                   className={`px-6 py-2 rounded-lg text-white ${
-                    saving ? "bg-green-400" : "bg-green-600 hover:bg-green-700"
+                    saving
+                      ? "bg-green-400"
+                      : "bg-green-600 hover:bg-green-700"
                   }`}
                 >
                   {saving ? "Saving..." : "Save"}
@@ -316,10 +330,10 @@ const MealPlanSetting = () => {
             </div>
           </div>
 
-          {/* Right Column: Sliders */}
+          {/* Right Column */}
           <div className="flex-1 max-w-md flex">
             <DynamicPercentageSliders
-              mealCards={mealCards.map((m) => m.name || "")}
+              mealCards={mealCards}
               slidersByPortion={slidersByPortion}
               onChange={setSlidersByPortion}
             />

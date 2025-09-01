@@ -224,47 +224,70 @@ const shareMeal = async (req, res) => {
   }
 };
 
+// Assumes: User schema has password { select: false } and a pre('save') hook that hashes it.
+// Assumes: req.user is populated by an auth middleware.
+
 const updatePassword = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('+password');
-    const { currentPassword, newPassword } = req.body;
-    
-    // Validate input
+    const userId = req.user?.id || req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    let { currentPassword, newPassword } = req.body || {};
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+      return res.status(400).json({ error: 'Current password and new password are required' });
+    }
+
+    currentPassword = currentPassword.trim();
+    newPassword = newPassword.trim();
+
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'Current password and new password are required' });
     }
-    
+
     // Verify current password
     const isMatch = await user.matchPassword(currentPassword);
     if (!isMatch) {
       return res.status(401).json({ error: 'Current password is incorrect' });
     }
-    
-    // Check if new password is the same as current
-    const isSamePassword = await user.matchPassword(newPassword);
-    if (isSamePassword) {
+
+    // Disallow reusing the same password
+    if (currentPassword === newPassword) {
       return res.status(400).json({ error: 'New password cannot be the same as current password' });
     }
-    
-    // Password validation: at least 6 chars, one uppercase, one lowercase, one digit
+
+    // Strength: ≥6 chars, at least one lowercase, one uppercase, and one digit
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
     if (!passwordRegex.test(newPassword)) {
-      return res.status(400).json({ 
-        error: 'Password must contain at least 6 characters, one uppercase letter, one lowercase letter, and one number' 
+      return res.status(400).json({
+        error:
+          'Password must contain at least 6 characters, one uppercase letter, one lowercase letter, and one number'
       });
     }
-    
-    // Update password
-    user.password = newPassword;
-    await user.save();
-    
-    return res.status(200).json({ message: 'Password updated successfully' });
 
+    // Update password (pre-save hook should hash)
+    user.password = newPassword;
+
+    // If your schema uses this to invalidate older tokens, set it
+    if (Object.prototype.hasOwnProperty.call(user, 'passwordChangedAt')) {
+      user.passwordChangedAt = new Date();
+    }
+
+    await user.save();
+
+    return res.status(200).json({ message: 'Password updated successfully' });
   } catch (err) {
     console.error('Password update error:', err);
-    res.status(500).json({ error: 'Failed to update password' });
+    return res.status(500).json({ error: 'Failed to update password' });
   }
 };
+
 //show timed meal configuration
 const showTimedMealConfiguration =async (req,res)=>{
   try{

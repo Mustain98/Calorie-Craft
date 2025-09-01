@@ -105,6 +105,7 @@ export default function ShowAllMeal() {
       closeNutritionModal();
     } catch (err) {
       toast.error("Failed to delete meal");
+      closeNutritionModal();
     }finally{
       setisDeleting(false);
     }
@@ -141,8 +142,10 @@ const handleSaveToMyMeals = async (meal) => {
     setUserMeals((prev) => [...prev, res.data.meal]);
     setSelectedMeal(res.data.meal);
     toast.success(res.data.message || "Meal saved to your collection");
+    closeNutritionModal();
   } catch (err) {
     toast.error(err.response?.data?.error || "Failed to save meal");
+    closeNutritionModal();
   }finally{
     setIsSaving(false);
   }
@@ -158,8 +161,10 @@ const handleSaveToMyMeals = async (meal) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Meal shared successfully");
+      closeNutritionModal();  
     } catch (err) {
       toast.error("Failed to share meal");
+      closeNutritionModal();
     }finally{
       setIsSharing(false);
     }

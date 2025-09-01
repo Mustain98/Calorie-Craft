@@ -129,7 +129,7 @@
   vertical-align: middle;
 }
 
-.absolute-edit-btn {
+/* .absolute-edit-btn {
   position: absolute;
   right: 0;
   transform: translateY(-50%);
@@ -140,4 +140,25 @@
   padding: 0 6px;
   font-size: 13px;
   line-height: 1;
+} */
+/* Row under each field to right-align the Edit/Done button */
+.edit-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;   /* small gap under the input/select */
+}
+
+/* Keep the button subtle, like your previous inline edit */
+.edit-below-btn {
+  background: none;
+  border: none;
+  color: black;
+  cursor: pointer;
+  padding: 0 6px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.edit-below-btn:hover {
+  text-decoration: underline;
 }

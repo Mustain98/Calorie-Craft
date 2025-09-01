@@ -53,9 +53,6 @@ export default function AdminProfilePage() {
           <form className="profile-form">
             <div className="form-header">
               <h2>Admin Profile</h2>
-              <button type="button" className="update-btn">
-                Update Profile
-              </button>
             </div>
 
             <label>User</label>
