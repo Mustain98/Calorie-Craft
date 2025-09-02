@@ -3,7 +3,7 @@ import './SignIn.css';
 import LeftSection from '../components/LeftSection';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
+import { toast } from "react-toastify";
 
 export default function AdminSigninPage() {
   const [formData, setFormData] = useState({
@@ -38,7 +38,7 @@ export default function AdminSigninPage() {
       // Store token & user data in localStorage
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data));
-
+      toast.success("Login successful!");
       setError('');
       navigate('/adminpage');
     } catch (err) {
