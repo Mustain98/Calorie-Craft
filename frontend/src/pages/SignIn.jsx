@@ -6,12 +6,9 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 export default function SigninPage() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -30,6 +27,7 @@ export default function SigninPage() {
     }
 
     try {
+      setLoading(true); // start loading
       const res = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/api/users/login`,
         formData
@@ -43,13 +41,16 @@ export default function SigninPage() {
       navigate("/profile");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed. Please try again.");
-      toast.error(error);
+      toast.error(err.response?.data?.error || "Login failed. Please try again.");
+    } finally {
+      setLoading(false); // stop loading
     }
   };
 
-  const handleNavigateToSignup=async()=>{
-    navigate('/signup');
-  }
+  const handleNavigateToSignup = () => {
+    navigate("/signup");
+  };
+
   return (
     <div className="signin-page">
       <LeftSection />
@@ -79,7 +80,11 @@ export default function SigninPage() {
           />
 
           {error && <p className="error-text">{error}</p>}
-          <button type="submit">Sign in</button>
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Signing in..." : "Sign in"}
+          </button>
+
           <p className="signup-link">
             Don't have an account?{" "}
             <span className="link-text" onClick={handleNavigateToSignup}>
