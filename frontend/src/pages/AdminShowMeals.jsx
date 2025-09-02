@@ -98,7 +98,7 @@ export default function AdminShowMeals() {
   const handleSaveToSystem = async () => {
     const token = localStorage.getItem("token");
     try {
-      isSaving(true);
+      setIsSaving(true);
       const res = await axios.post(
         `${process.env.REACT_APP_API_ADMIN_URL}/api/admin/pending-meals/${selectedMeal._id}`,
         {},

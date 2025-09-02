@@ -1,5 +1,5 @@
 import axios from "axios";
-import logo from "../logo.png";
+// import logo from "../logo.png";
 import "./Profile.css";
 import AdminSidebar from "../components/AdminSidebar";
 import { useNavigate } from "react-router-dom";
@@ -78,7 +78,7 @@ export default function AdminProfilePage() {
             <button
               type="button"
               className="change-password-btn"
-              onClick={() => navigate("/changepassword")}
+              onClick={() => navigate("/adminChangePass")}
             >
               Change Password
             </button>
