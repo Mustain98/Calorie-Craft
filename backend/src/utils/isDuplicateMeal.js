@@ -9,11 +9,8 @@ const isDuplicateInMyMeals = async (userId, mealName, foodItems) => {
       user: userId,
       name: { $regex: new RegExp(`^${mealName}$`, 'i') }
     });
-
-    console.log(`myMeals check result: ${existingMeal ? 'FOUND' : 'NOT FOUND'}`);
     return { isDuplicate: !!existingMeal, existingMeal };
   } catch (err) {
-    console.error('Error in isDuplicateInMyMeals:', err.message);
     return { isDuplicate: false, error: err.message };
   }
 };

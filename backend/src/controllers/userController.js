@@ -201,7 +201,7 @@ const shareMeal = async (req, res) => {
 
     const duplicateCheck = await isDuplicateForSharing(userId, meal.name);
     if (duplicateCheck.isDuplicate) {
-      return res.status(400).json({ message: 'Meal already shared' });
+      return res.status(400).json({ error: 'Meal already shared' });
     }
 
     const newPending = new pendingMeal({

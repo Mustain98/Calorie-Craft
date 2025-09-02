@@ -10,7 +10,7 @@ export default function AdminProfilePage() {
   const navigate = useNavigate();
   const [adminData, setAdminData] = useState(null);
   const [formData, setFormData] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
   useEffect(() => {

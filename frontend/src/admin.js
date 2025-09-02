@@ -5,7 +5,6 @@ import AdminShowMeals from "./pages/AdminShowMeals";
 import AdminCreateMeal from "./pages/AdminCreateMealPage";
 import AdminLandingPage from "./pages/AdminLandingPage";
 import AdminSigninPage from "./pages/AdminSignIn";
-import ChangePasswordPage from "./pages/ChangePassword";
 import CreateAdminPage from "./pages/CreateAdmin";
 import AddIngreidentPage from "./pages/AddIngredients";
 import ShowIngredients from "./pages/ShowIngredients";
