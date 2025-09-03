@@ -3,7 +3,7 @@ import './SignIn.css';
 import LeftSection from '../components/LeftSection';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
+import { toast } from "react-toastify";
 
 export default function AdminSigninPage() {
   const [formData, setFormData] = useState({
@@ -13,8 +13,7 @@ export default function AdminSigninPage() {
 
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const [sidebarVisible, setSidebarVisible] = useState(true);
-  
+  const [loading, setLoading] = useState(false);
   
 
   const handleChange = (e) => {
@@ -33,16 +32,19 @@ export default function AdminSigninPage() {
     }
 
     try {
+      setLoading(true);
       const res = await axios.post(`${process.env.REACT_APP_API_ADMIN_URL}/api/admin/login`, formData);
 
       // Store token & user data in localStorage
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data));
-
+      toast.success("Login successful!");
       setError('');
       navigate('/adminpage');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
+    } finally{
+      setLoading(false);
     }
   };
 
@@ -74,7 +76,9 @@ export default function AdminSigninPage() {
           />
 
           {error && <p className="error-text">{error}</p>}
-          <button type="submit">Sign in</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Signing in..." : "Sign in"}
+          </button>
         </form>
       </div>
     </div>

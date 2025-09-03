@@ -19,7 +19,7 @@ export default function AdminShowMeals() {
   const [isDeleting, setisDeleting] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const tab = "pending,system";
+  // const tab = "pending,system";
 
   useEffect(() => {
     const token = localStorage.getItem("token");

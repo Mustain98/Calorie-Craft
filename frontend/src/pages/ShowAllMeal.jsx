@@ -163,7 +163,7 @@ const handleSaveToMyMeals = async (meal) => {
       toast.success("Meal shared successfully");
       closeNutritionModal();  
     } catch (err) {
-      toast.error("Failed to share meal");
+      toast.error(err.response?.data?.error||"Failed to share meal");
       closeNutritionModal();
     }finally{
       setIsSharing(false);
