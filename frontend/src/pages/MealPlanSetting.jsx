@@ -199,6 +199,63 @@ const MealPlanSetting = () => {
     }
   };
 
+    // --- Reset meal plan to default
+  const handleReset = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return navigate("/signin");
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+
+    try {
+       const res = await axios.put(
+        `${API_BASE}/users/me/resetMealPlanSetting`,
+        {},
+        { headers }
+       );
+    
+
+      const arr = Array.isArray(res.data?.timedMealConfiguration)
+        ? res.data.timedMealConfiguration
+        : [];
+
+      if (arr.length) {
+        const sorted = [...arr].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        setMealCards(
+          sorted.map((x, i) => ({
+            id: i + 1,
+            name: x.name ?? `Meal ${i + 1}`,
+            type: x.type ?? "",
+            order: x.order ?? i,
+          }))
+        );
+
+        const toPct = (v) =>
+          Math.round((Number(v || 0) * 100 + Number.EPSILON) * 100) / 100;
+        setSlidersByPortion({
+          caloriePortion: sorted.map((x) => toPct(x.caloriePortion)),
+          carbPortion: sorted.map((x) => toPct(x.carbPortion)),
+          proteinPortion: sorted.map((x) => toPct(x.proteinPortion)),
+          fatPortion: sorted.map((x) => toPct(x.fatPortion)),
+        });
+      }
+
+      toast.success("Meal plan reset to default");
+    } catch (err) {
+      if (err.response) {
+        toast.error(
+          err.response?.data?.error ||
+            `Reset failed (${err.response.status})`
+        );
+        if (err.response.status === 401) navigate("/signin");
+      } else {
+        toast.error("Reset failed. Check console.");
+      }
+    }
+  };
+
   // --- Generate week plan then navigate to /mealplan
   const handleGenerate = async () => {
     const token = localStorage.getItem("token");
@@ -293,7 +350,8 @@ const MealPlanSetting = () => {
             </DragDropContext>
 
             {/* Add / Save / Generate Buttons */}
-            <div className="flex flex-col items-center space-y-3">
+           
+            <div className="flex flex-col items-center space-y-4">
               <button
                 onClick={addCard}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -301,26 +359,37 @@ const MealPlanSetting = () => {
                 Add Meal Card
               </button>
 
-              <div className="flex gap-3">
+              {/* Row 1: Save + Reset side by side */}
+              <div className="flex flex-wrap items-center justify-center gap-3 w-full">
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className={`px-6 py-2 rounded-lg text-white ${
-                    saving
-                      ? "bg-green-400"
-                      : "bg-green-600 hover:bg-green-700"
+                  className={`px-6 py-2 rounded-lg text-white transition ${
+                    saving ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
                   }`}
+                  aria-label="Save meal plan"
+                  title="Save meal plan"
                 >
                   {saving ? "Saving..." : "Save"}
                 </button>
 
                 <button
+                  onClick={handleReset}
+                  className="px-6 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 transition"
+                  aria-label="Reset to default meal plan"
+                  title="Revert back to default meal plan settings"
+                >
+                  Reset to Default
+                </button>
+              </div>
+
+              {/* Row 2: Generate below */}
+              <div className="w-full flex justify-center">
+                <button
                   onClick={handleGenerate}
                   disabled={generating}
-                  className={`px-6 py-2 rounded-lg text-white ${
-                    generating
-                      ? "bg-indigo-400"
-                      : "bg-indigo-600 hover:bg-indigo-700"
+                  className={`px-6 py-2 rounded-lg text-white transition ${
+                    generating ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"
                   }`}
                   title="Generate a 7-day plan from your settings"
                 >
@@ -328,6 +397,7 @@ const MealPlanSetting = () => {
                 </button>
               </div>
             </div>
+
           </div>
 
           {/* Right Column */}

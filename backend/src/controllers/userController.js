@@ -333,6 +333,31 @@ const updateTimedMealConfiguration = async (req, res) => {
     res.status(500).json({ error: "Failed to update meal configuration" });
   }
 };
+// Reset user timed meal configuration to schema default
+const resetTimedMealConfiguration = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Get the default from the schema to avoid duplication
+    const schemaDefault =
+      User.schema.path("timedMealConfig").options.default;
+
+    // Deep-copy in case default is an array/object literal
+    const defaultConfig = JSON.parse(JSON.stringify(schemaDefault));
+
+    user.timedMealConfig = defaultConfig;
+    await user.save();
+
+    return res.json({
+      message: "Meal configuration reset to default",
+      timedMealConfiguration: user.timedMealConfig,
+    });
+  } catch (err) {
+    console.error("Error resetting meal config:", err);
+    return res.status(500).json({ error: "Failed to reset meal configuration" });
+  }
+};
 
 module.exports = {
   registerUser,
@@ -346,5 +371,6 @@ module.exports = {
   updatePassword,
   shareMeal,
   showTimedMealConfiguration,
-  updateTimedMealConfiguration
+  updateTimedMealConfiguration,
+  resetTimedMealConfiguration
 };
